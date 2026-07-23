@@ -6,6 +6,7 @@ Product documentation:
 
 - [Product Requirements](./functional-design.md): Complete requirements for entry points, the side panel, text actions, result revision, providers, models, OCR, text-to-speech, vocabulary, history, and settings.
 - [Material Design 3 UI Specification](./material-design-3-ui.md): Layout, components, tokens, screen designs, interaction states, responsive behavior, and accessibility requirements.
+- [Provider Architecture](./provider-architecture.md): Provider registry, protocol adapters, model discovery, structured output, endpoint security, and storage migration.
 
 Core capabilities:
 
@@ -13,7 +14,8 @@ Core capabilities:
 2. Complete all tasks in the Chrome side panel.
 3. Use a single result pane for the initial result and all subsequent revisions.
 4. Revise the current result through a bottom instruction box.
-5. Support OpenAI and Gemini.
+5. Support OpenAI, Gemini, Claude, Grok, OpenRouter, and LiteLLM.
 6. Support model discovery with provider-specific default models.
-7. Connect only to the official API endpoints for each provider.
+7. Use fixed official endpoints for hosted providers and an explicitly
+   authorized Base URL only for the self-hosted LiteLLM provider.
 8. Generate speech with OpenAI TTS or Gemini TTS.

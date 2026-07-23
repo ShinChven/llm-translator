@@ -1,4 +1,10 @@
-export type ProviderId = "openai" | "gemini";
+export type ProviderId =
+  | "openai"
+  | "gemini"
+  | "claude"
+  | "grok"
+  | "openrouter"
+  | "litellm";
 
 export type BuiltInActionId =
   | "translate"
@@ -12,6 +18,7 @@ export type ActionId = BuiltInActionId | `custom:${string}`;
 
 export interface ProviderSettings {
   apiKey: string;
+  baseUrl: string;
   model: string;
   discoveredModels: string[];
 }

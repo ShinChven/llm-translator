@@ -272,6 +272,123 @@ textarea:disabled {
   font-size: 12px;
 }
 
+.result-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.share-control {
+  position: relative;
+}
+
+.share-control > .icon-button.selected {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.share-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  width: 188px;
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  padding: 6px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container);
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.share-menu-heading {
+  padding: 5px 9px 7px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.share-menu button {
+  display: grid;
+  min-height: 36px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  grid-template-columns: 24px 1fr;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.share-menu button:hover,
+.share-menu button:focus-visible {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.share-menu-divider {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--md-sys-color-outline-variant);
+}
+
+.social-mark {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-surface);
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.social-mark.linkedin {
+  background: #0a66c2;
+  color: #fff;
+  font-size: 9px;
+}
+
+.social-mark.facebook {
+  background: #1877f2;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+}
+
+.social-mark.reddit {
+  background: #ff4500;
+  color: #fff;
+}
+
+.social-mark.truth {
+  background: #5448ee;
+  color: #fff;
+}
+
+.social-mark.more {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border: 0 !important;
+  margin: -1px !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
 .chip-row {
   display: flex;
   width: 100%;
@@ -322,6 +439,13 @@ textarea:disabled {
   border-color: transparent;
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
+}
+
+.action-emoji {
+  font-family:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .filled-button {
@@ -763,6 +887,36 @@ textarea:disabled {
   font-size: 18px;
 }
 
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.provider-grid button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container-low);
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.provider-grid button.selected {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
 .segmented-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -855,6 +1009,117 @@ textarea:disabled {
   grid-template-columns: 76px minmax(0, 1fr);
 }
 
+.emoji-field {
+  position: relative;
+  min-width: 0;
+}
+
+.emoji-field .outlined-field input {
+  padding-right: 39px;
+  font-family:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 20px;
+}
+
+.emoji-picker-button {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  place-items: center;
+  cursor: pointer;
+}
+
+.emoji-picker-button:hover {
+  background: color-mix(
+    in srgb,
+    var(--md-sys-color-secondary-container) 82%,
+    var(--md-sys-color-on-secondary-container)
+  );
+}
+
+.emoji-picker-button:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 1px;
+}
+
+.emoji-picker-button span {
+  overflow: hidden;
+  max-width: 30px;
+  font-family:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 20px;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.emoji-picker-scrim {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  padding: 12px 12px 72px;
+  background: rgb(0 0 0 / 28%);
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.emoji-picker-dialog {
+  display: flex;
+  overflow: hidden;
+  width: min(420px, 100%);
+  max-height: calc(100vh - 96px);
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 25%);
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emoji-picker-heading {
+  display: flex;
+  min-height: 34px;
+  padding-left: 4px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.emoji-picker-dialog .EmojiPickerReact {
+  --epr-bg-color: var(--md-sys-color-surface-container);
+  --epr-category-label-bg-color: var(--md-sys-color-surface-container);
+  --epr-hover-bg-color: var(--md-sys-color-secondary-container);
+  --epr-focus-bg-color: var(--md-sys-color-secondary-container);
+  --epr-highlight-color: var(--md-sys-color-primary);
+  --epr-search-input-bg-color: var(--md-sys-color-surface-container-highest);
+  --epr-search-input-text-color: var(--md-sys-color-on-surface);
+  --epr-text-color: var(--md-sys-color-on-surface);
+  max-width: 100%;
+  border-color: var(--md-sys-color-outline-variant);
+  font-family: inherit;
+}
+
+.emoji-picker-loading {
+  display: grid;
+  min-height: 240px;
+  color: var(--md-sys-color-on-surface-variant);
+  place-items: center;
+}
+
+.emoji-picker-dialog > p {
+  margin: 0 4px 2px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .custom-action-option-fields {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
@@ -938,6 +1203,335 @@ textarea:disabled {
   }
 }
 
+/* Material 3 compact density for the browser side-panel workspace. */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-width: 2px;
+}
+
+.top-app-bar {
+  min-height: 52px;
+  padding: 6px 10px;
+  grid-template-columns: 40px 1fr 40px;
+}
+
+.top-app-bar h1 {
+  margin: 0 10px;
+  font-size: 18px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+}
+
+.icon-button.tonal {
+  width: 38px;
+  height: 38px;
+}
+
+.icon-button.small {
+  width: 34px;
+  height: 34px;
+}
+
+.process-content,
+.settings-content {
+  padding: 4px 12px 16px;
+}
+
+.setup-card,
+.error-banner {
+  border-radius: 14px;
+}
+
+.setup-card {
+  gap: 10px;
+  margin: 2px 0 10px;
+  padding: 10px 12px;
+}
+
+.section-heading {
+  min-height: 30px;
+}
+
+.section-heading h2,
+.settings-section h2 {
+  font-size: 13px;
+}
+
+.section-heading h2 {
+  gap: 6px;
+}
+
+.mode-badge {
+  min-height: 20px;
+  padding: 0 7px;
+}
+
+.chip-row {
+  padding: 1px 0 6px;
+  gap: 6px;
+}
+
+.filter-chip,
+.filled-button,
+.outlined-button,
+.text-button,
+.tonal-button {
+  min-height: 34px;
+  gap: 6px;
+}
+
+.filter-chip {
+  padding: 0 12px;
+}
+
+.filled-button {
+  min-height: 38px;
+  padding: 0 16px;
+}
+
+.outlined-button,
+.tonal-button {
+  padding: 0 16px;
+}
+
+.text-button {
+  padding: 0 10px;
+}
+
+.text-button.compact {
+  min-height: 32px;
+}
+
+.language-controls {
+  margin: 2px 0 8px;
+  grid-template-columns: minmax(0, 1fr) 38px minmax(0, 1fr);
+}
+
+.select-field span,
+.outlined-field > span {
+  margin: 0 9px -7px;
+  font-size: 11px;
+}
+
+.select-field select,
+.outlined-field input,
+.outlined-field select,
+.outlined-field textarea {
+  border-radius: 10px;
+}
+
+.select-field select,
+.outlined-field input,
+.outlined-field select {
+  height: 44px;
+  padding: 7px 10px;
+}
+
+.secret-field input {
+  padding-right: 44px;
+}
+
+.secret-reveal {
+  right: 2px;
+  bottom: 2px;
+}
+
+.text-section {
+  margin-top: 4px;
+}
+
+.source-field {
+  min-height: 112px;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.source-provider-controls {
+  margin-top: 8px;
+}
+
+.source-provider-controls .filled-button {
+  min-height: 44px;
+  padding: 0 13px;
+}
+
+.result-section {
+  margin-top: 6px;
+}
+
+.result-surface {
+  min-height: 92px;
+  border-radius: 14px;
+}
+
+.result-surface pre {
+  min-height: 92px;
+  padding: 14px;
+  line-height: 1.58;
+}
+
+.word-hero {
+  padding: 16px 14px 13px;
+}
+
+.word-title {
+  font-size: 24px;
+}
+
+.word-pronunciation {
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.dictionary-section {
+  padding: 13px 14px;
+}
+
+.dictionary-section h3 {
+  margin-bottom: 8px;
+}
+
+.sense-list {
+  gap: 8px;
+}
+
+.sense-list li {
+  gap: 7px;
+}
+
+.sense-list li::before {
+  width: 20px;
+  height: 20px;
+}
+
+.part-of-speech {
+  min-height: 20px;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.example-list {
+  gap: 7px;
+}
+
+.example-list li {
+  padding: 9px 10px 9px 34px;
+  border-radius: 10px;
+}
+
+.example-list li::before {
+  top: 9px;
+  left: 11px;
+}
+
+.result-placeholder {
+  min-height: 92px;
+}
+
+.error-banner {
+  margin-top: 8px;
+  padding: 5px 5px 5px 12px;
+}
+
+.revision-composer {
+  padding: 7px 12px 8px;
+}
+
+.revision-composer > label {
+  max-width: 736px;
+  margin-bottom: 5px;
+  font-size: 11px;
+}
+
+.composer-row {
+  max-width: 736px;
+  padding: 2px 2px 2px 12px;
+  border-radius: 22px;
+  grid-template-columns: 1fr 36px;
+  gap: 4px;
+}
+
+.composer-row textarea {
+  padding: 7px 0;
+}
+
+.send-button {
+  width: 36px;
+  height: 36px;
+}
+
+.settings-content {
+  padding-bottom: 72px;
+}
+
+.settings-section {
+  margin: 6px 0 18px;
+  gap: 11px;
+}
+
+.settings-section h2 {
+  font-size: 16px;
+}
+
+.segmented-buttons button {
+  min-height: 38px;
+}
+
+.segmented-buttons button:first-child {
+  border-radius: 19px 0 0 19px;
+}
+
+.segmented-buttons button:last-child {
+  border-radius: 0 19px 19px 0;
+}
+
+.outlined-field textarea {
+  padding: 11px 10px;
+}
+
+.supporting-text,
+.field-error {
+  margin: -7px 3px 0;
+  font-size: 11px;
+}
+
+.custom-action-card {
+  padding: 13px 12px 9px;
+  border-radius: 14px;
+  gap: 8px;
+}
+
+.custom-action-fields {
+  gap: 10px;
+}
+
+.custom-action-primary-fields,
+.custom-action-option-fields {
+  gap: 8px;
+}
+
+.new-action-card {
+  padding: 12px;
+  border-radius: 14px;
+  gap: 11px;
+}
+
+.settings-save-bar {
+  min-height: 60px;
+  padding: 8px 12px;
+}
+
 @media (max-width: 380px) {
   .process-content,
   .settings-content {
@@ -954,7 +1548,13 @@ textarea:disabled {
   }
 
   .source-field {
-    min-height: 130px;
+    min-height: 104px;
+  }
+}
+
+@media (min-width: 560px) {
+  .provider-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -1,24 +1,34 @@
-import { DEFAULT_MODELS, DEFAULT_SETTINGS, STORAGE_KEYS } from "./constants";
+import {
+  DEFAULT_MODELS,
+  DEFAULT_SETTINGS,
+  PROVIDER_IDS,
+  STORAGE_KEYS,
+  isProviderId,
+} from "./constants";
 import type { AppSettings, CustomAction, PendingTask } from "./types";
 
 function mergeSettings(value?: Partial<AppSettings>): AppSettings {
+  const providers = Object.fromEntries(
+    PROVIDER_IDS.map((provider) => [
+      provider,
+      {
+        ...DEFAULT_SETTINGS.providers[provider],
+        ...value?.providers?.[provider],
+      },
+    ]),
+  ) as AppSettings["providers"];
+
   const merged: AppSettings = {
     ...DEFAULT_SETTINGS,
     ...value,
+    provider: isProviderId(value?.provider)
+      ? value.provider
+      : DEFAULT_SETTINGS.provider,
     defaultTargetLanguage:
       value?.defaultTargetLanguage ??
       value?.targetLanguage ??
       DEFAULT_SETTINGS.defaultTargetLanguage,
-    providers: {
-      openai: {
-        ...DEFAULT_SETTINGS.providers.openai,
-        ...value?.providers?.openai,
-      },
-      gemini: {
-        ...DEFAULT_SETTINGS.providers.gemini,
-        ...value?.providers?.gemini,
-      },
-    },
+    providers,
     customActions: (
       (value?.customActions ?? []) as Array<
         Partial<CustomAction> & { id: string; name: string; instruction?: string }
@@ -30,12 +40,12 @@ function mergeSettings(value?: Partial<AppSettings>): AppSettings {
       rolePrompt: action.rolePrompt ?? "",
       commandPrompt: action.commandPrompt ?? action.instruction ?? "",
       outputFormat: action.outputFormat ?? "text",
-      provider: action.provider,
+      provider: isProviderId(action.provider) ? action.provider : undefined,
       model: action.model,
     })),
   };
 
-  for (const provider of ["openai", "gemini"] as const) {
+  for (const provider of PROVIDER_IDS) {
     const providerSettings = merged.providers[provider];
     const selectableModels = new Set([
       DEFAULT_MODELS[provider],

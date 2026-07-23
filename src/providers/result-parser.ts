@@ -13,7 +13,21 @@ const RESULT_SCHEMA = {
 export { RESULT_SCHEMA };
 
 export function parseFinalResult(raw: string): GeneratedResult {
-  const parsed = JSON.parse(raw) as unknown;
+  const trimmed = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/iu, "")
+    .replace(/\s*```$/u, "");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed) as unknown;
+  } catch {
+    const firstBrace = trimmed.indexOf("{");
+    const lastBrace = trimmed.lastIndexOf("}");
+    if (firstBrace < 0 || lastBrace <= firstBrace) {
+      throw new Error("The model returned invalid JSON.");
+    }
+    parsed = JSON.parse(trimmed.slice(firstBrace, lastBrace + 1)) as unknown;
+  }
   if (
     typeof parsed !== "object" ||
     parsed === null ||

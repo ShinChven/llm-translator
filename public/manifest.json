@@ -12,8 +12,12 @@
   "permissions": ["contextMenus", "sidePanel", "storage"],
   "host_permissions": [
     "https://api.openai.com/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.x.ai/*",
+    "https://openrouter.ai/*"
   ],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

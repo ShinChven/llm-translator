@@ -6,9 +6,11 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite build --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:release-tag": "node scripts/verify-release-tag.mjs"
   },
   "dependencies": {
+    "emoji-picker-react": "^4.19.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

@@ -13,7 +13,7 @@ The interface follows these principles:
 - The current result is the visual center of the application.
 - The revision field is a tool for transforming the result, not a chat composer.
 - Tonal surfaces establish hierarchy before shadows.
-- Controls remain compact while preserving 48-by-48-pixel interaction targets.
+- Controls use Material 3 compact density for a desktop browser side panel. Primary controls remain 38–44 pixels high, while secondary icon controls may use 34–40-pixel visual containers with accessible labels and focus states.
 - Labels describe actions directly and do not use conversational language.
 - The same component hierarchy works in light and dark color schemes.
 
@@ -33,7 +33,7 @@ The page uses:
 - A small top app bar.
 - One scrollable content region.
 - A docked revision area at the bottom of the Process page.
-- 16-pixel horizontal page padding at compact and medium widths.
+- 12-pixel horizontal page padding at compact and medium widths.
 - 24-pixel horizontal page padding at 600 pixels and above.
 - A 4-pixel base spacing grid.
 
@@ -87,7 +87,7 @@ Behavior:
 
 Tokens:
 
-- Height: 64 px.
+- Height: 52 px.
 - Background: `surface`.
 - Foreground: `onSurface`.
 - Bottom divider: `outlineVariant` at 1 px only after content scrolls beneath it.
@@ -126,7 +126,7 @@ Compact behavior:
 
 - Each field can display a short language name or code.
 - The source-language field displays `Auto` when automatic detection is active.
-- The Swap icon button remains 48 by 48 px.
+- The Swap icon button uses a 38-by-38-pixel compact visual container.
 - The fields share the available row width equally.
 
 The row is hidden for actions that do not use language parameters.
@@ -141,7 +141,7 @@ Appearance:
 - M3 outlined multiline text field.
 - Field label: `Source text`.
 - Text color: `onSurface`.
-- Minimum visible height: 72 px.
+- Minimum visible height: 112 px in the current implementation, with user resizing available.
 - Maximum visible height: 160 px before internal scrolling.
 - Supporting row for detected language and character or token count.
 - OCR import icon button in the supporting row.
@@ -165,17 +165,18 @@ Appearance:
 
 - Container color: `surfaceContainerLow`.
 - Text color: `onSurface`.
-- Shape: 16-pixel corner radius.
-- Internal padding: 16 px.
+- Shape: 14-pixel corner radius.
+- Internal padding: 14 px.
 - No default shadow.
-- Minimum height: 240 px.
-- The surface expands to fill available vertical space.
+- The empty surface uses a compact 92-pixel minimum height.
+- A populated surface follows the content height so the Process page owns vertical scrolling.
 
 Result header:
 
 - Leading label: `Result`.
 - Optional status text.
 - Regenerate icon button.
+- Share icon button with a compact platform menu.
 - Copy icon button.
 - Overflow icon button.
 
@@ -201,7 +202,7 @@ Appearance:
 
 - Background: `surfaceContainer`.
 - Top divider: `outlineVariant`.
-- Padding: 12 px top and bottom, 16 px left and right.
+- Padding: 7–8 px vertically and 12 px horizontally.
 - Elevation: level 2 only when result content scrolls behind it.
 
 Input:
@@ -437,7 +438,8 @@ Use a full-height side-panel page.
 Fields:
 
 - Name: filled text field.
-- Icon: icon picker.
+- Icon: searchable Unicode emoji picker rendered with the system emoji font,
+  plus a directly editable emoji field.
 - Role prompt: outlined multiline text field.
 - Command prompt: outlined multiline text field.
 - Output format: segmented button.
@@ -499,20 +501,29 @@ Use M3 secondary tabs:
 
 - OpenAI.
 - Gemini.
+- Claude.
+- Grok.
+- OpenRouter.
+- LiteLLM.
 
 Provider form:
 
-- OpenAI and Gemini API key: outlined password field with visibility toggle.
-- Official endpoint: read-only supporting text.
+- Hosted-provider API key: outlined password field with visibility toggle.
+- Hosted-provider official endpoint: read-only supporting text.
+- LiteLLM Base URL: outlined URL field followed by an optional proxy API-key field.
+- LiteLLM endpoint authorization: requested from Chrome when saving or discovering models.
 - Connection state: inline status row.
 - `Test connection`: filled tonal button.
 
 Displayed endpoints:
 
 - OpenAI: `https://api.openai.com/v1`.
-- Gemini: `https://generativelanguage.googleapis.com`.
+- Gemini: `https://generativelanguage.googleapis.com/v1beta`.
+- Claude: `https://api.anthropic.com/v1`.
+- Grok: `https://api.x.ai/v1`.
+- OpenRouter: `https://openrouter.ai/api/v1`.
 
-The form does not contain a custom base URL or proxy field.
+The form exposes a Base URL only when LiteLLM is selected. No hosted provider exposes a custom endpoint or proxy field.
 
 Model selector:
 
@@ -730,7 +741,10 @@ Requirements:
 - Keyboard navigation follows the visual order.
 - Focus moves to a restored page heading after navigation.
 - Focus returns to the triggering control after closing menus and dialogs.
-- `Enter` submits a revision and `Shift + Enter` inserts a line break.
+- In Source, `Enter` runs the selected action.
+- In the revision field, `Enter` applies the instruction.
+- In either field, `Shift + Enter` or `Alt + Enter` inserts a line break.
+- Enter does not submit while an input method editor is composing text.
 - Reading order remains logical when the side panel is resized.
 
 ## 20. Material Design 3 Acceptance Criteria

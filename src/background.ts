@@ -1,24 +1,37 @@
 import { STORAGE_KEYS } from "./shared/constants";
 import {
-  generateWithGemini,
-  listGeminiModels,
-} from "./providers/gemini";
-import {
-  generateWithOpenAI,
-  listOpenAIModels,
-} from "./providers/openai";
+  generateWithProvider,
+  listProviderModels,
+} from "./providers/registry";
+import { providerOriginPattern } from "./shared/provider-url";
 import { loadSettings } from "./shared/storage";
 import type {
   GenerationPortEvent,
   GenerationPortMessage,
   PendingTask,
   ProcessTaskMessage,
+  ProviderId,
   RuntimeRequest,
   RuntimeResponse,
 } from "./shared/types";
 
 const PROCESS_SELECTION = "process-selection";
 const OPEN_TRANSLATOR = "open-translator";
+
+async function ensureProviderHostPermission(
+  provider: ProviderId,
+  baseUrl: string,
+): Promise<void> {
+  if (provider !== "litellm") return;
+
+  const origin = providerOriginPattern(baseUrl);
+  const granted = await chrome.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    throw new Error(
+      "LiteLLM endpoint access is not authorized. Open Settings and save or discover models again.",
+    );
+  }
+}
 
 async function createContextMenus(): Promise<void> {
   await chrome.contextMenus.removeAll();
@@ -93,13 +106,15 @@ chrome.runtime.onMessage.addListener(
     void (async () => {
       try {
         const settings = await loadSettings();
-        const apiKey = settings.providers[message.provider].apiKey.trim();
-        if (!apiKey) throw new Error("Enter and save an API key first.");
-
-        const models =
-          message.provider === "openai"
-            ? await listOpenAIModels(apiKey)
-            : await listGeminiModels(apiKey);
+        const providerSettings = settings.providers[message.provider];
+        await ensureProviderHostPermission(
+          message.provider,
+          providerSettings.baseUrl,
+        );
+        const models = await listProviderModels(
+          message.provider,
+          providerSettings,
+        );
 
         sendResponse({ ok: true, models });
       } catch (error) {
@@ -133,9 +148,11 @@ chrome.runtime.onConnect.addListener((port) => {
       const post = (event: GenerationPortEvent) => port.postMessage(event);
       try {
         const settings = await loadSettings();
-        const apiKey = settings.providers[request.provider].apiKey.trim();
-        if (!apiKey) throw new Error("Add an API key in Settings.");
-        if (!request.model.trim()) throw new Error("Choose a model.");
+        const providerSettings = settings.providers[request.provider];
+        await ensureProviderHostPermission(
+          request.provider,
+          providerSettings.baseUrl,
+        );
 
         post({ type: "started", requestId: request.requestId });
         const onResult = (result: string) => {
@@ -144,20 +161,13 @@ chrome.runtime.onConnect.addListener((port) => {
           }
         };
 
-        const generatedResult =
-          request.provider === "openai"
-            ? await generateWithOpenAI(
-                apiKey,
-                request,
-                controller!.signal,
-                onResult,
-              )
-            : await generateWithGemini(
-                apiKey,
-                request,
-                controller!.signal,
-                onResult,
-              );
+        const generatedResult = await generateWithProvider(
+          request.provider,
+          providerSettings,
+          request,
+          controller!.signal,
+          onResult,
+        );
 
         post({
           type: "complete",

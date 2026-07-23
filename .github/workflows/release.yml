@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish extension
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out tag
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify release versions
+        run: npm run verify:release-tag -- "$GITHUB_REF_NAME"
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Read release metadata
+        id: release
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          if [[ "${version}" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package extension
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cd dist
+          zip -9 -r "../release-assets/llm-translator-${{ steps.release.outputs.version }}-chrome.zip" .
+          cd ..
+          sha256sum release-assets/*.zip > release-assets/SHA256SUMS.txt
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IS_PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          release_flags=()
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            release_flags+=(--prerelease)
+          fi
+
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              release-assets/* \
+              --verify-tag \
+              --generate-notes \
+              --title "LLM Translator ${RELEASE_VERSION}" \
+              "${release_flags[@]}"
+          fi

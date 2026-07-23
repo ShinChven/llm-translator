@@ -1,9 +1,96 @@
-import type { AppSettings, BuiltInActionId } from "./types";
+import type {
+  AppSettings,
+  BuiltInActionId,
+  ProviderId,
+} from "./types";
 
-export const DEFAULT_MODELS = {
+export const PROVIDER_IDS: readonly ProviderId[] = [
+  "openai",
+  "gemini",
+  "claude",
+  "grok",
+  "openrouter",
+  "litellm",
+];
+
+export const DEFAULT_MODELS: Record<ProviderId, string> = {
   openai: "gpt-5.6-luna",
   gemini: "gemini-3.5-flash-lite",
-} as const;
+  claude: "claude-haiku-4-5",
+  grok: "grok-latest",
+  openrouter: "openrouter/auto",
+  litellm: "",
+};
+
+export interface ProviderDefinition {
+  id: ProviderId;
+  label: string;
+  endpoint?: string;
+  apiKeyRequired: boolean;
+  apiKeyPlaceholder: string;
+  configurableBaseUrl: boolean;
+}
+
+export const PROVIDER_DEFINITIONS: Record<ProviderId, ProviderDefinition> = {
+  openai: {
+    id: "openai",
+    label: "OpenAI",
+    endpoint: "https://api.openai.com/v1",
+    apiKeyRequired: true,
+    apiKeyPlaceholder: "sk-…",
+    configurableBaseUrl: false,
+  },
+  gemini: {
+    id: "gemini",
+    label: "Gemini",
+    endpoint: "https://generativelanguage.googleapis.com/v1beta",
+    apiKeyRequired: true,
+    apiKeyPlaceholder: "AI…",
+    configurableBaseUrl: false,
+  },
+  claude: {
+    id: "claude",
+    label: "Claude",
+    endpoint: "https://api.anthropic.com/v1",
+    apiKeyRequired: true,
+    apiKeyPlaceholder: "sk-ant-…",
+    configurableBaseUrl: false,
+  },
+  grok: {
+    id: "grok",
+    label: "Grok",
+    endpoint: "https://api.x.ai/v1",
+    apiKeyRequired: true,
+    apiKeyPlaceholder: "xai-…",
+    configurableBaseUrl: false,
+  },
+  openrouter: {
+    id: "openrouter",
+    label: "OpenRouter",
+    endpoint: "https://openrouter.ai/api/v1",
+    apiKeyRequired: true,
+    apiKeyPlaceholder: "sk-or-v1-…",
+    configurableBaseUrl: false,
+  },
+  litellm: {
+    id: "litellm",
+    label: "LiteLLM",
+    apiKeyRequired: false,
+    apiKeyPlaceholder: "Optional proxy key",
+    configurableBaseUrl: true,
+  },
+};
+
+export function providerLabel(provider: ProviderId): string {
+  return PROVIDER_DEFINITIONS[provider].label;
+}
+
+export function isProviderId(value: unknown): value is ProviderId {
+  return (
+    typeof value === "string" &&
+    (PROVIDER_IDS as readonly string[]).includes(value)
+  );
+}
 
 export const STORAGE_KEYS = {
   settings: "appSettings",
@@ -18,12 +105,38 @@ export const DEFAULT_SETTINGS: AppSettings = {
   providers: {
     openai: {
       apiKey: "",
+      baseUrl: "",
       model: DEFAULT_MODELS.openai,
       discoveredModels: [],
     },
     gemini: {
       apiKey: "",
+      baseUrl: "",
       model: DEFAULT_MODELS.gemini,
+      discoveredModels: [],
+    },
+    claude: {
+      apiKey: "",
+      baseUrl: "",
+      model: DEFAULT_MODELS.claude,
+      discoveredModels: [],
+    },
+    grok: {
+      apiKey: "",
+      baseUrl: "",
+      model: DEFAULT_MODELS.grok,
+      discoveredModels: [],
+    },
+    openrouter: {
+      apiKey: "",
+      baseUrl: "",
+      model: DEFAULT_MODELS.openrouter,
+      discoveredModels: [],
+    },
+    litellm: {
+      apiKey: "",
+      baseUrl: "http://localhost:4000/v1",
+      model: DEFAULT_MODELS.litellm,
       discoveredModels: [],
     },
   },
@@ -32,14 +145,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export const BUILT_IN_ACTIONS: Array<{
   id: BuiltInActionId;
+  icon: string;
   label: string;
 }> = [
-  { id: "translate", label: "Translate" },
-  { id: "polish", label: "Polish" },
-  { id: "summarize", label: "Summarize" },
-  { id: "what", label: "What" },
-  { id: "how", label: "How" },
-  { id: "why", label: "Why" },
+  { id: "translate", icon: "🌐", label: "Translate" },
+  { id: "polish", icon: "✨", label: "Polish" },
+  { id: "summarize", icon: "📝", label: "Summarize" },
+  { id: "what", icon: "❓", label: "What" },
+  { id: "how", icon: "🛠️", label: "How" },
+  { id: "why", icon: "💡", label: "Why" },
 ];
 
 export const LANGUAGES = [

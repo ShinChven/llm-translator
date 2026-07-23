@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -9,14 +11,18 @@ import {
   BUILT_IN_ACTIONS,
   DEFAULT_MODELS,
   LANGUAGES,
+  PROVIDER_DEFINITIONS,
+  PROVIDER_IDS,
   STORAGE_KEYS,
   languageName,
+  providerLabel,
 } from "../shared/constants";
 import {
   detectLanguage,
   fallbackTargetLanguage,
 } from "../shared/language-detection";
 import { loadPendingTask, loadSettings, saveSettings } from "../shared/storage";
+import { providerOriginPattern } from "../shared/provider-url";
 import { isSingleWord } from "../shared/text-mode";
 import type {
   ActionId,
@@ -33,16 +39,19 @@ import type {
   RuntimeResponse,
 } from "../shared/types";
 import { Icon } from "./Icon";
+import { ShareMenu } from "./ShareMenu";
 import { WordResult } from "./WordResult";
 
 type View = "process" | "settings";
 
+const ActionEmojiPicker = lazy(() =>
+  import("./ActionEmojiPicker").then((module) => ({
+    default: module.ActionEmojiPicker,
+  })),
+);
+
 function makeId(): string {
   return crypto.randomUUID();
-}
-
-function providerLabel(provider: ProviderId): string {
-  return provider === "openai" ? "OpenAI" : "Gemini";
 }
 
 type EditableCustomAction = Omit<CustomAction, "id">;
@@ -69,7 +78,7 @@ export function App() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [autoRunTaskId, setAutoRunTaskId] = useState<string>();
-  const [pendingDefaultTargetTaskId, setPendingDefaultTargetTaskId] =
+  const [pendingTaskInitializationId, setPendingTaskInitializationId] =
     useState<string>();
   const generationPort = useRef<chrome.runtime.Port | undefined>(undefined);
   const activeRequestId = useRef<string | undefined>(undefined);
@@ -84,7 +93,7 @@ export function App() {
       setSwapText("");
       setError("");
       setView("process");
-      setPendingDefaultTargetTaskId(task.id);
+      setPendingTaskInitializationId(task.id);
       if (task.autoRun) setAutoRunTaskId(task.id);
     };
 
@@ -126,18 +135,22 @@ export function App() {
   );
 
   useEffect(() => {
-    if (!pendingDefaultTargetTaskId || !settings) return;
+    if (!pendingTaskInitializationId || !settings) return;
 
-    if (settings.targetLanguage !== settings.defaultTargetLanguage) {
+    if (
+      settings.sourceLanguage !== "auto" ||
+      settings.targetLanguage !== settings.defaultTargetLanguage
+    ) {
       const nextSettings = {
         ...settings,
+        sourceLanguage: "auto",
         targetLanguage: settings.defaultTargetLanguage,
       };
       setSettings(nextSettings);
       void saveSettings(nextSettings);
     }
-    setPendingDefaultTargetTaskId(undefined);
-  }, [pendingDefaultTargetTaskId, settings]);
+    setPendingTaskInitializationId(undefined);
+  }, [pendingTaskInitializationId, settings]);
 
   const selectedCustomAction = settings?.customActions.find(
     (action) => `custom:${action.id}` === actionId,
@@ -148,6 +161,8 @@ export function App() {
     selectedCustomAction?.model ??
     settings?.providers[activeProvider].model ??
     DEFAULT_MODELS[activeProvider];
+  const activeProviderDefinition = PROVIDER_DEFINITIONS[activeProvider];
+  const activeProviderSettings = settings?.providers[activeProvider];
 
   const detectedSourceLanguage = useMemo(() => {
     if (settings?.sourceLanguage !== "auto" || !source.trim()) return undefined;
@@ -201,7 +216,11 @@ export function App() {
       source.trim() &&
       effectiveSourceLanguage &&
       effectiveTargetLanguage &&
-      settings.providers[activeProvider].apiKey.trim() &&
+      activeProviderSettings &&
+      (!activeProviderDefinition.apiKeyRequired ||
+        activeProviderSettings.apiKey.trim()) &&
+      (!activeProviderDefinition.configurableBaseUrl ||
+        activeProviderSettings.baseUrl.trim()) &&
       activeModel.trim(),
   );
 
@@ -263,6 +282,8 @@ export function App() {
       activeProvider,
       effectiveSourceLanguage,
       effectiveTargetLanguage,
+      activeProviderDefinition,
+      activeProviderSettings,
       result,
       selectedCustomAction,
       settings,
@@ -273,7 +294,7 @@ export function App() {
   useEffect(() => {
     if (
       !autoRunTaskId ||
-      pendingDefaultTargetTaskId ||
+      pendingTaskInitializationId ||
       view !== "process" ||
       !canGenerate
     ) {
@@ -287,7 +308,7 @@ export function App() {
   }, [
     autoRunTaskId,
     canGenerate,
-    pendingDefaultTargetTaskId,
+    pendingTaskInitializationId,
     runGeneration,
     view,
   ]);
@@ -471,7 +492,12 @@ function ProcessView({
   onStop,
 }: ProcessViewProps) {
   const provider = settings.providers[activeProvider];
-  const configured = Boolean(provider.apiKey.trim() && activeModel.trim());
+  const providerDefinition = PROVIDER_DEFINITIONS[activeProvider];
+  const configured = Boolean(
+    (!providerDefinition.apiKeyRequired || provider.apiKey.trim()) &&
+      (!providerDefinition.configurableBaseUrl || provider.baseUrl.trim()) &&
+      activeModel.trim(),
+  );
   const modelOptions = Array.from(
     new Set(
       [activeModel, ...provider.discoveredModels].filter(
@@ -507,7 +533,11 @@ function ProcessView({
           <section className="setup-card" aria-label="Provider setup required">
             <div>
               <strong>Connect a model provider</strong>
-              <p>Add an API key to start with the default model.</p>
+              <p>
+                {providerDefinition.configurableBaseUrl
+                  ? "Add a LiteLLM endpoint and discover a model."
+                  : "Add an API key to start with the default model."}
+              </p>
             </div>
             <button className="text-button" onClick={onOpenSettings}>
               Set up
@@ -531,6 +561,9 @@ function ProcessView({
                 onClick={() => onActionChange(action.id)}
               >
                 {actionId === action.id && <Icon name="check" size={18} />}
+                <span className="action-emoji" aria-hidden="true">
+                  {action.icon}
+                </span>
                 {action.label}
               </button>
             ))}
@@ -543,7 +576,11 @@ function ProcessView({
                   onClick={() => onActionChange(id)}
                 >
                   {actionId === id && <Icon name="check" size={18} />}
-                  {action.icon && <span aria-hidden="true">{action.icon}</span>}
+                  {action.icon && (
+                    <span className="action-emoji" aria-hidden="true">
+                      {action.icon}
+                    </span>
+                  )}
                   {action.name}
                 </button>
               );
@@ -619,6 +656,17 @@ function ProcessView({
             placeholder="Select text and use the context menu, or type here."
             value={source}
             onChange={(event) => onSourceChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !event.altKey &&
+                !event.nativeEvent.isComposing
+              ) {
+                event.preventDefault();
+                if (canGenerate && !busy) onGenerate();
+              }
+            }}
           />
           <div className="source-provider-controls">
             <label className="select-field">
@@ -633,8 +681,11 @@ function ProcessView({
                   })
                 }
               >
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
+                {PROVIDER_IDS.map((providerId) => (
+                  <option key={providerId} value={providerId}>
+                    {providerLabel(providerId)}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="select-field">
@@ -692,9 +743,17 @@ function ProcessView({
               {wordMode && <span className="mode-badge">Word mode</span>}
             </h2>
             {result && (
-              <button className="icon-button small" aria-label="Copy result" onClick={onCopy}>
-                <Icon name={copied ? "check" : "copy"} size={20} />
-              </button>
+              <div className="result-actions">
+                <ShareMenu result={result} />
+                <button
+                  className="icon-button small"
+                  aria-label="Copy result"
+                  title="Copy result"
+                  onClick={onCopy}
+                >
+                  <Icon name={copied ? "check" : "copy"} size={20} />
+                </button>
+              </div>
             )}
           </div>
           <div
@@ -742,7 +801,12 @@ function ProcessView({
             value={revision}
             onChange={(event) => onRevisionChange(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !event.altKey &&
+                !event.nativeEvent.isComposing
+              ) {
                 event.preventDefault();
                 if (revision.trim() && result && !busy) onRevise();
               }
@@ -757,7 +821,6 @@ function ProcessView({
             <Icon name="send" size={20} />
           </button>
         </div>
-        <p>Each instruction replaces the result. This is not a chat.</p>
       </footer>
     </>
   );
@@ -766,7 +829,7 @@ function ProcessView({
 interface SettingsViewProps {
   settings: AppSettings;
   onSettingsChange: (settings: AppSettings) => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
 }
 
 function SettingsView({
@@ -781,11 +844,14 @@ function SettingsView({
     useState<EditableCustomAction>(emptyCustomAction);
   const provider = settings.provider;
   const providerSettings = settings.providers[provider];
+  const providerDefinition = PROVIDER_DEFINITIONS[provider];
   const selectableModels = Array.from(
-    new Set([
-      DEFAULT_MODELS[provider],
-      ...providerSettings.discoveredModels,
-    ]),
+    new Set(
+      [
+        DEFAULT_MODELS[provider],
+        ...providerSettings.discoveredModels,
+      ].filter(Boolean),
+    ),
   );
 
   const updateProvider = (
@@ -805,9 +871,26 @@ function SettingsView({
   };
 
   const discoverModels = async () => {
+    let authorization: Promise<boolean> = Promise.resolve(true);
+    try {
+      if (provider === "litellm") {
+        authorization = chrome.permissions.request({
+          origins: [providerOriginPattern(providerSettings.baseUrl)],
+        });
+      }
+    } catch (error) {
+      setModelError(
+        error instanceof Error ? error.message : "Invalid LiteLLM Base URL.",
+      );
+      return;
+    }
+
     setLoadingModels(true);
     setModelError("");
     try {
+      if (!(await authorization)) {
+        throw new Error("LiteLLM endpoint access was not granted.");
+      }
       await saveSettings(settings);
       const request: RuntimeRequest = { type: "list-models", provider };
       const response = (await chrome.runtime.sendMessage(
@@ -822,6 +905,36 @@ function SettingsView({
     } finally {
       setLoadingModels(false);
     }
+  };
+
+  const saveProviderSettings = () => {
+    let authorization: Promise<boolean> = Promise.resolve(true);
+    try {
+      if (provider === "litellm") {
+        authorization = chrome.permissions.request({
+          origins: [providerOriginPattern(providerSettings.baseUrl)],
+        });
+      }
+    } catch (error) {
+      setModelError(
+        error instanceof Error ? error.message : "Invalid LiteLLM Base URL.",
+      );
+      return;
+    }
+
+    setModelError("");
+    void authorization
+      .then((granted) => {
+        if (!granted) {
+          throw new Error("LiteLLM endpoint access was not granted.");
+        }
+        return onSave();
+      })
+      .catch((error) =>
+        setModelError(
+          error instanceof Error ? error.message : "Could not save settings.",
+        ),
+      );
   };
 
   const addCustomAction = () => {
@@ -873,15 +986,17 @@ function SettingsView({
     <main className="settings-content">
       <section className="settings-section" aria-labelledby="provider-heading">
         <h2 id="provider-heading">Model provider</h2>
-        <div className="segmented-buttons" role="radiogroup" aria-label="Provider">
-          {(["openai", "gemini"] as const).map((providerId) => (
+        <div className="provider-grid" role="radiogroup" aria-label="Provider">
+          {PROVIDER_IDS.map((providerId) => (
             <button
               aria-checked={provider === providerId}
               className={provider === providerId ? "selected" : ""}
               key={providerId}
-              onClick={() =>
-                onSettingsChange({ ...settings, provider: providerId })
-              }
+              onClick={() => {
+                setModelError("");
+                setShowApiKey(false);
+                onSettingsChange({ ...settings, provider: providerId });
+              }}
               role="radio"
             >
               {provider === providerId && <Icon name="check" size={18} />}
@@ -890,12 +1005,34 @@ function SettingsView({
           ))}
         </div>
 
+        {providerDefinition.configurableBaseUrl && (
+          <>
+            <label className="outlined-field">
+              <span>Base URL</span>
+              <input
+                inputMode="url"
+                placeholder="http://localhost:4000/v1"
+                value={providerSettings.baseUrl}
+                onChange={(event) =>
+                  updateProvider(provider, { baseUrl: event.target.value })
+                }
+              />
+            </label>
+            <p className="supporting-text">
+              Use the OpenAI-compatible LiteLLM Proxy base URL, including its
+              API prefix. Chrome asks for access only to this host.
+            </p>
+          </>
+        )}
+
         <label className="outlined-field secret-field">
-          <span>API key</span>
+          <span>
+            API key{providerDefinition.apiKeyRequired ? "" : " · optional"}
+          </span>
           <input
             type={showApiKey ? "text" : "password"}
             autoComplete="off"
-            placeholder={provider === "openai" ? "sk-…" : "AI…"}
+            placeholder={providerDefinition.apiKeyPlaceholder}
             value={providerSettings.apiKey}
             onChange={(event) =>
               updateProvider(provider, { apiKey: event.target.value })
@@ -915,8 +1052,9 @@ function SettingsView({
           </button>
         </label>
         <p className="supporting-text">
-          Stored in this browser profile. Requests use the provider’s official API
-          endpoint only.
+          {providerDefinition.endpoint
+            ? `Stored in this browser profile. Requests go only to ${providerDefinition.endpoint}.`
+            : "Stored in this browser profile and sent only to the configured LiteLLM host."}
         </p>
 
         <label className="outlined-field">
@@ -927,6 +1065,11 @@ function SettingsView({
               updateProvider(provider, { model: event.target.value })
             }
           >
+            {!providerSettings.model && (
+              <option value="" disabled>
+                Discover and select a model
+              </option>
+            )}
             {selectableModels.map((model) => (
               <option key={model} value={model}>
                 {model}
@@ -936,7 +1079,13 @@ function SettingsView({
         </label>
         <button
           className="outlined-button"
-          disabled={!providerSettings.apiKey.trim() || loadingModels}
+          disabled={
+            loadingModels ||
+            (providerDefinition.apiKeyRequired &&
+              !providerSettings.apiKey.trim()) ||
+            (providerDefinition.configurableBaseUrl &&
+              !providerSettings.baseUrl.trim())
+          }
           onClick={discoverModels}
         >
           {loadingModels ? "Discovering…" : "Discover available models"}
@@ -1056,7 +1205,7 @@ function SettingsView({
         {hasUnsavedAction && (
           <span>Add or clear the draft custom action before leaving.</span>
         )}
-        <button className="filled-button" onClick={onSave}>
+        <button className="filled-button" onClick={saveProviderSettings}>
           Save settings
         </button>
       </div>
@@ -1075,33 +1224,53 @@ function CustomActionFields({
   settings,
   onChange,
 }: CustomActionFieldsProps) {
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  useEffect(() => {
+    if (!emojiPickerOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setEmojiPickerOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [emojiPickerOpen]);
+
   const actionModels = action.provider
     ? Array.from(
-        new Set([
-          DEFAULT_MODELS[action.provider],
-          ...settings.providers[action.provider].discoveredModels,
-        ]),
+        new Set(
+          [
+            DEFAULT_MODELS[action.provider],
+            ...settings.providers[action.provider].discoveredModels,
+          ].filter(Boolean),
+        ),
       )
     : [];
 
   return (
     <div className="custom-action-fields">
       <div className="custom-action-primary-fields">
-        <label className="outlined-field icon-field">
-          <span>Icon</span>
-          <select
-            value={action.icon}
-            onChange={(event) => onChange({ icon: event.target.value })}
+        <div className="emoji-field">
+          <label className="outlined-field">
+            <span>Icon</span>
+            <input
+              aria-label="Action emoji"
+              inputMode="text"
+              placeholder="✨"
+              value={action.icon}
+              onChange={(event) => onChange({ icon: event.target.value })}
+            />
+          </label>
+          <button
+            aria-expanded={emojiPickerOpen}
+            aria-haspopup="dialog"
+            aria-label="Choose action emoji"
+            className="emoji-picker-button"
+            title="Choose emoji"
+            type="button"
+            onClick={() => setEmojiPickerOpen(true)}
           >
-            {["✨", "✍️", "🧠", "📋", "🔍", "💡", "🧹", "🧩"].map(
-              (icon) => (
-                <option key={icon} value={icon}>
-                  {icon}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+            <span aria-hidden="true">{action.icon || "🙂"}</span>
+          </button>
+        </div>
         <label className="outlined-field">
           <span>Name</span>
           <input
@@ -1111,6 +1280,52 @@ function CustomActionFields({
           />
         </label>
       </div>
+
+      {emojiPickerOpen && (
+        <div
+          className="emoji-picker-scrim"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setEmojiPickerOpen(false);
+            }
+          }}
+        >
+          <section
+            aria-label="Choose action emoji"
+            aria-modal="true"
+            className="emoji-picker-dialog"
+            role="dialog"
+          >
+            <div className="emoji-picker-heading">
+              <strong>Choose emoji</strong>
+              <button
+                aria-label="Close emoji picker"
+                className="icon-button small"
+                type="button"
+                onClick={() => setEmojiPickerOpen(false)}
+              >
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+            <Suspense
+              fallback={
+                <div className="emoji-picker-loading">Loading emoji…</div>
+              }
+            >
+              <ActionEmojiPicker
+                onSelect={(emoji) => {
+                  onChange({ icon: emoji });
+                  setEmojiPickerOpen(false);
+                }}
+              />
+            </Suspense>
+            <p>
+              Uses your system emoji font. You can also paste any emoji into
+              the Icon field.
+            </p>
+          </section>
+        </div>
+      )}
 
       <label className="outlined-field">
         <span>Role prompt · optional</span>
@@ -1166,8 +1381,11 @@ function CustomActionFields({
             }}
           >
             <option value="">Use global</option>
-            <option value="openai">OpenAI</option>
-            <option value="gemini">Gemini</option>
+            {PROVIDER_IDS.map((providerId) => (
+              <option key={providerId} value={providerId}>
+                {providerLabel(providerId)}
+              </option>
+            ))}
           </select>
         </label>
         {action.provider && (

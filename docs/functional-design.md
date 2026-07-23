@@ -30,7 +30,7 @@ When the user selects the menu item, the extension:
 
 1. Opens or focuses the side panel in the current browser window.
 2. Sets the selected text as the source text of the current task.
-3. Starts processing with the current action, languages, provider, and model.
+3. Resets the source language to automatic detection, detects the selected text, applies the configured default target language with the English fallback rule, and starts processing with the current provider and model.
 4. Displays the generated result in the primary result pane.
 
 Selecting text does not trigger the extension interface. The extension does not display selection buttons, bubbles, or translation overlays on the web page.
@@ -88,6 +88,7 @@ The Process page contains the following areas from top to bottom:
 5. Result toolbar
    - Regenerate.
    - Stop.
+   - Share.
    - Copy.
    - Read aloud.
    - Save.
@@ -96,6 +97,8 @@ The Process page contains the following areas from top to bottom:
    - Displays the only result for the current task.
    - Displays streaming generation status.
    - Supports plain text, Markdown, and LaTeX.
+
+The Share control appears immediately before Copy and opens a compact platform menu. It supports X, Threads, Facebook, LinkedIn, Truth Social, Reddit, and the operating system share sheet when available. Sharing includes only the result text and never includes the source-page URL. Platforms that accept text receive a prefilled result or excerpt. For platform web composers that cannot receive text directly, the complete result is copied to the clipboard for pasting. When a platform limits post length, the complete result is also copied before an excerpt is opened.
 7. Bottom revision area
    - Fixed to the bottom of the side panel.
    - Accepts a new revision instruction for the current result.
@@ -113,6 +116,11 @@ Source text and revision instructions are separate inputs:
 ### 3.3 Empty Workspace
 
 When no source text exists, the Source section displays an empty multiline field. The Result section below it displays an empty state, and the bottom revision area is disabled. The user can type or paste text, select an action, and run it.
+
+In the Source field, Enter runs the selected action. In the bottom revision
+field, Enter applies the current instruction. Shift+Enter and Alt+Enter insert
+a line break in either field. Enter does not submit while an input method
+editor is composing text.
 
 After the initial generation completes:
 
@@ -189,7 +197,7 @@ Users can create, edit, reorder, and delete custom actions.
 Each custom action contains:
 
 - Name.
-- Icon.
+- Icon selected from the complete Unicode emoji picker or entered directly.
 - Role prompt.
 - Command prompt.
 - Output format.
@@ -211,7 +219,21 @@ Supported output formats:
 
 A custom action can use the global provider and model or define its own provider and model.
 
+The emoji picker uses native Unicode characters rendered by the operating
+system emoji font. It supports search, categories, skin tones, and the complete
+emoji catalog bundled with the extension. The Icon field also accepts pasted
+emoji so characters newly supported by the operating system remain usable.
+
 Built-in actions can be reordered and can override provider, model, and reasoning settings. Built-in actions are always retained.
+
+Built-in actions use fixed default emoji:
+
+- Translate: 🌐
+- Polish: ✨
+- Summarize: 📝
+- What: ❓
+- How: 🛠️
+- Why: 💡
 
 ## 6. Revising the Current Result
 
@@ -355,6 +377,7 @@ Language capabilities include:
 - Searchable source- and target-language lists.
 - Recently used languages.
 - A configurable default target language.
+- Each new context-menu translation resets the source language to automatic detection, regardless of the language used by the previous task.
 - Each new context-menu translation starts with the configured default target language.
 - Changing the target language in the process view affects the current task without changing the default.
 - When automatic source detection matches the default target language, the task target falls back to English.
@@ -534,6 +557,10 @@ The extension supports:
 
 1. OpenAI
 2. Gemini
+3. Claude
+4. Grok
+5. OpenRouter
+6. LiteLLM
 
 Provider configuration:
 
@@ -541,6 +568,10 @@ Provider configuration:
 | --- | --- |
 | OpenAI | API key |
 | Gemini | API key |
+| Claude | API key |
+| Grok | API key |
+| OpenRouter | API key |
+| LiteLLM | Base URL and optional proxy API key |
 
 Users can configure multiple providers and select one as the current provider.
 
@@ -549,9 +580,14 @@ The provider endpoints are fixed:
 | Provider | Official service endpoint |
 | --- | --- |
 | OpenAI | `https://api.openai.com/v1` |
-| Gemini | `https://generativelanguage.googleapis.com` |
+| Gemini | `https://generativelanguage.googleapis.com/v1beta` |
+| Claude | `https://api.anthropic.com/v1` |
+| Grok | `https://api.x.ai/v1` |
+| OpenRouter | `https://openrouter.ai/api/v1` |
 
-The extension does not provide a custom base URL, proxy URL, or compatible-service endpoint setting. API resource paths and versions are managed by the extension.
+OpenAI, Gemini, Claude, Grok, and OpenRouter do not provide a custom base URL, proxy URL, or compatible-service endpoint setting. Their API resource paths and versions are managed by the extension.
+
+LiteLLM is a self-hosted gateway and therefore requires a configurable OpenAI-compatible Base URL. The default is `http://localhost:4000/v1`. Chrome requests an optional host permission for only the configured host when the user saves the configuration or discovers models. LiteLLM Base URL configuration does not alter or proxy any other provider.
 
 ### 14.2 Connection Test
 
@@ -584,6 +620,10 @@ Each provider has a built-in default text model:
 
 - OpenAI: `gpt-5.6-luna`
 - Gemini: `gemini-3.5-flash-lite`
+- Claude: `claude-haiku-4-5`
+- Grok: `grok-latest`
+- OpenRouter: `openrouter/auto`
+- LiteLLM: no universal default; the user discovers and selects a model exposed by the configured proxy.
 
 Users can select the default model or another model returned by provider discovery. Arbitrary model IDs cannot be entered.
 
@@ -629,6 +669,7 @@ General settings include:
 - Language-detection method.
 - Current provider.
 - Current model.
+- LiteLLM Base URL and optional proxy key.
 - Per-action provider and model overrides.
 - Reasoning toggle.
 - Automatic vocabulary saving.
@@ -778,10 +819,14 @@ Users can delete individual data categories or clear all local data.
 
 ### 20.5 Providers and Models
 
-- Settings displays only OpenAI and Gemini.
+- Settings displays OpenAI, Gemini, Claude, Grok, OpenRouter, and LiteLLM.
 - OpenAI requests use `https://api.openai.com/v1`.
-- Gemini requests use `https://generativelanguage.googleapis.com`.
-- Settings does not expose a custom base URL or proxy address.
+- Gemini requests use `https://generativelanguage.googleapis.com/v1beta`.
+- Claude requests use `https://api.anthropic.com/v1`.
+- Grok requests use `https://api.x.ai/v1`.
+- OpenRouter requests use `https://openrouter.ai/api/v1`.
+- LiteLLM requests use only the user-configured and runtime-authorized Base URL.
+- Settings exposes a Base URL only for LiteLLM; hosted providers remain fixed to their official endpoints.
 - Each provider supports a connection test.
 - Each provider supports model discovery.
 - Users can select the provider default or a discovered model.
