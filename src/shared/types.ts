@@ -25,6 +25,8 @@ export interface ProviderSettings {
   discoveredModels: string[];
 }
 
+export type ThemePreference = "system" | "light" | "dark";
+
 export type ActionOutputFormat = "text" | "markdown" | "latex";
 
 export interface CustomAction {
@@ -49,6 +51,7 @@ export interface SpeechSettings {
 
 export interface AppSettings {
   provider: ProviderId;
+  theme: ThemePreference;
   sourceLanguage: string;
   targetLanguage: string;
   defaultTargetLanguage: string;

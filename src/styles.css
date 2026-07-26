@@ -28,8 +28,13 @@
     0 1px 2px rgb(0 0 0 / 0.12), 0 1px 3px 1px rgb(0 0 0 / 0.08);
 }
 
+/*
+ * Dark palette. It follows the OS unless the user pinned a theme in Settings,
+ * which sets data-theme on <html>. The media query keeps the first paint
+ * correct on a dark OS, before the stored preference has been read.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --md-sys-color-primary: #b1c6ff;
     --md-sys-color-on-primary: #152e60;
     --md-sys-color-primary-container: #2e4578;
@@ -51,6 +56,35 @@
     --md-sys-color-inverse-surface: #e4e2e9;
     --md-sys-color-inverse-on-surface: #303034;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --md-sys-color-primary: #b1c6ff;
+  --md-sys-color-on-primary: #152e60;
+  --md-sys-color-primary-container: #2e4578;
+  --md-sys-color-on-primary-container: #d9e2ff;
+  --md-sys-color-secondary-container: #414659;
+  --md-sys-color-on-secondary-container: #dbe2f9;
+  --md-sys-color-tertiary-container: #63365b;
+  --md-sys-color-surface: #121318;
+  --md-sys-color-surface-container: #1f2025;
+  --md-sys-color-surface-container-low: #1b1b20;
+  --md-sys-color-surface-container-high: #2a2a2f;
+  --md-sys-color-on-surface: #e4e2e9;
+  --md-sys-color-on-surface-variant: #c5c6d0;
+  --md-sys-color-outline: #8f909a;
+  --md-sys-color-outline-variant: #44464f;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+  --md-sys-color-inverse-surface: #e4e2e9;
+  --md-sys-color-inverse-on-surface: #303034;
+}
+
+/* Light tokens already live on :root; pinning light only fixes color-scheme. */
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 * {
@@ -966,6 +1000,10 @@ textarea:disabled {
   border-color: var(--md-sys-color-primary);
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
+}
+
+.provider-grid.theme-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .provider-grid button:disabled {

@@ -19,6 +19,7 @@ import {
   SPEECH_PROVIDER_DEFINITIONS,
   SPEECH_PROVIDER_IDS,
   STORAGE_KEYS,
+  THEME_OPTIONS,
   extensionVersion,
   languageName,
   providerLabel,
@@ -102,6 +103,15 @@ export function App() {
   const activeRequestId = useRef<string | undefined>(undefined);
   const handledTaskIds = useRef(new Set<string>());
   const speaker = useSpeaker(settings);
+
+  const theme = settings?.theme;
+  useEffect(() => {
+    if (!theme || theme === "system") {
+      delete document.documentElement.dataset.theme;
+    } else {
+      document.documentElement.dataset.theme = theme;
+    }
+  }, [theme]);
 
   useEffect(() => {
     const acceptTask = (task: PendingTask) => {
@@ -1195,6 +1205,32 @@ function SettingsView({
         <p className="supporting-text">
           New context-menu translations start with this target. Changing the
           target on the main screen affects only the current task.
+        </p>
+      </section>
+
+      <section className="settings-section" aria-labelledby="appearance-heading">
+        <h2 id="appearance-heading">Appearance</h2>
+        <div
+          className="provider-grid theme-grid"
+          role="radiogroup"
+          aria-label="Theme"
+        >
+          {THEME_OPTIONS.map((option) => (
+            <button
+              aria-checked={settings.theme === option.id}
+              className={settings.theme === option.id ? "selected" : ""}
+              key={option.id}
+              onClick={() => onSettingsChange({ ...settings, theme: option.id })}
+              role="radio"
+            >
+              {settings.theme === option.id && <Icon name="check" size={18} />}
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <p className="supporting-text">
+          System follows Chrome's light or dark setting. Light and dark pin the
+          panel regardless of it.
         </p>
       </section>
 
