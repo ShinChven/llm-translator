@@ -6,6 +6,8 @@ export type ProviderId =
   | "openrouter"
   | "litellm";
 
+export type SpeechProviderId = "webspeech" | "gemini" | "openai";
+
 export type BuiltInActionId =
   | "translate"
   | "polish"
@@ -36,6 +38,15 @@ export interface CustomAction {
   model?: string;
 }
 
+export interface SpeechProviderSettings {
+  voice: string;
+}
+
+export interface SpeechSettings {
+  provider: SpeechProviderId;
+  providers: Record<SpeechProviderId, SpeechProviderSettings>;
+}
+
 export interface AppSettings {
   provider: ProviderId;
   sourceLanguage: string;
@@ -43,6 +54,7 @@ export interface AppSettings {
   defaultTargetLanguage: string;
   providers: Record<ProviderId, ProviderSettings>;
   customActions: CustomAction[];
+  speech: SpeechSettings;
 }
 
 export interface PendingTask {

@@ -2,8 +2,10 @@ import {
   DEFAULT_MODELS,
   DEFAULT_SETTINGS,
   PROVIDER_IDS,
+  SPEECH_PROVIDER_IDS,
   STORAGE_KEYS,
   isProviderId,
+  isSpeechProviderId,
 } from "./constants";
 import type { AppSettings, CustomAction, PendingTask } from "./types";
 
@@ -18,9 +20,25 @@ function mergeSettings(value?: Partial<AppSettings>): AppSettings {
     ]),
   ) as AppSettings["providers"];
 
+  const speechProviders = Object.fromEntries(
+    SPEECH_PROVIDER_IDS.map((provider) => [
+      provider,
+      {
+        ...DEFAULT_SETTINGS.speech.providers[provider],
+        ...value?.speech?.providers?.[provider],
+      },
+    ]),
+  ) as AppSettings["speech"]["providers"];
+
   const merged: AppSettings = {
     ...DEFAULT_SETTINGS,
     ...value,
+    speech: {
+      provider: isSpeechProviderId(value?.speech?.provider)
+        ? value.speech.provider
+        : DEFAULT_SETTINGS.speech.provider,
+      providers: speechProviders,
+    },
     provider: isProviderId(value?.provider)
       ? value.provider
       : DEFAULT_SETTINGS.provider,

@@ -140,6 +140,21 @@ textarea:disabled {
   white-space: nowrap;
 }
 
+.repository-link {
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.repository-link:hover {
+  text-decoration: underline;
+}
+
+.repository-link:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 3px;
+}
+
 .brand-mark,
 .icon-button {
   display: inline-flex;
@@ -277,6 +292,38 @@ textarea:disabled {
   flex: 0 0 auto;
   align-items: center;
   gap: 2px;
+}
+
+.heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.speak-button.speaking {
+  color: var(--md-sys-color-primary);
+}
+
+.speak-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--md-sys-color-outline-variant);
+  border-radius: 50%;
+  border-top-color: var(--md-sys-color-primary);
+  animation: speak-spin 0.7s linear infinite;
+}
+
+@keyframes speak-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speak-spinner {
+    animation-duration: 2s;
+  }
 }
 
 .share-control {
@@ -915,6 +962,11 @@ textarea:disabled {
   border-color: var(--md-sys-color-primary);
   background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
+}
+
+.provider-grid button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .segmented-buttons {

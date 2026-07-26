@@ -431,45 +431,68 @@ Text-to-speech uses a separate speech provider and speech model configuration. C
 
 Supported speech providers:
 
-| Speech provider | Service | Authentication |
-| --- | --- | --- |
-| OpenAI | OpenAI Speech API | Reuses the configured OpenAI API key |
-| Gemini | Gemini API TTS | Reuses the configured Gemini API key |
+| Speech provider | Service | Authentication | Default |
+| --- | --- | --- | --- |
+| Browser | Web Speech API (`speechSynthesis`) | None | Yes |
+| Gemini | Gemini API TTS | Reuses the configured Gemini API key | |
+| OpenAI | OpenAI Speech API | Reuses the configured OpenAI API key | |
 
 Official speech endpoints:
 
 | Speech provider | Official endpoint |
 | --- | --- |
+| Browser | Local to Chrome; no network request |
+| Gemini | `https://generativelanguage.googleapis.com` (`:streamGenerateContent`) |
 | OpenAI | `https://api.openai.com/v1/audio/speech` |
-| Gemini | `https://generativelanguage.googleapis.com` |
 
-The extension uses only models with text-to-speech or audio-output capability. The speech model selector is populated from supported discovered models independently from the text model selector.
+A cloud engine is selectable only while its provider has an API key; otherwise its option is disabled. Each engine uses one fixed speech model, so no speech-model discovery is required:
 
-Text-to-speech capabilities include:
+| Speech provider | Speech model |
+| --- | --- |
+| Gemini | `gemini-3.1-flash-tts-preview` |
+| OpenAI | `gpt-4o-mini-tts` |
 
-- Play.
+### 11.1 Streaming Playback
+
+Both cloud engines stream 16-bit mono PCM and are played chunk by chunk rather than after the clip is complete, which is what keeps time-to-first-sound low. Gemini delivers base64 PCM over server-sent events; OpenAI delivers headerless PCM over a chunked response, requested as `response_format: "pcm"`.
+
+Each chunk is decoded on arrival and scheduled back to back on the Web Audio clock. The audio context is created at the stream's own sample rate so that nothing is resampled. If the network stalls, the next chunk is scheduled just ahead of the clock rather than in the past. Because a network chunk can split a 16-bit sample, an odd trailing byte is carried into the next chunk instead of being discarded.
+
+Model identifiers are unversioned aliases so that provider snapshot rotations do not require a release.
+
+Implemented text-to-speech capabilities:
+
+- Play and stop, from the Source pane and the Result pane.
+- Speech-provider selection, independent of the text provider.
+- Voice selection per provider, with the choice remembered for each provider separately.
+- Voice preview, using a randomly chosen test phrase.
+- Voices grouped and labelled by gender. No provider publishes gender as data, so the labels are curated and presented as approximate. Voices that cannot be classified, such as the novelty system voices, are grouped separately rather than guessed at.
+
+Not yet implemented:
+
 - Pause.
-- Stop.
-- Reading-progress highlighting.
-- Speech-provider selection.
-- Speech-model selection.
-- Voice selection by language.
-- Voice preview.
-- Speaking-style instructions when supported by the selected model.
-- Volume control.
-- Speech-rate control.
+- Reading-progress highlighting. Only the browser engine can support this, because the cloud engines return audio without word timestamps.
+- Speaking-style instructions.
+- Volume and speech-rate control.
 - A saved default voice for each language.
 
 Speech behavior:
 
 - The generated audio recites the selected Source or Result content.
+- Only one item plays at a time. Starting one stops the other.
+- Stop cancels pending speech generation and playback.
+- Changing the speech provider or voice stops any current playback.
+- A failed speech request does not change Source or Result.
+- The extension does not automatically switch to another speech provider after a failure.
+
+Planned but not yet implemented:
+
 - Markdown formatting markers are removed before synthesis.
 - Code blocks and content marked as non-spoken are excluded.
 - Long text is processed as ordered segments and played continuously.
-- Stop cancels pending speech generation and playback.
-- A failed speech request does not change Source or Result.
 - The interface identifies generated speech as AI-generated.
-- The extension does not automatically switch to another speech provider after a failure.
+
+Generated audio from a cloud engine is assembled into a WAV clip as it streams and cached in memory, keyed by speech provider, speech model, voice, and exact text. Replaying the same text with the same voice reuses the cached audio and issues no new request. The cache holds up to 50 MB and evicts least-recently-used entries beyond that. It is discarded when the side panel closes.
 
 Generated audio is temporary and is not stored in History.
 
