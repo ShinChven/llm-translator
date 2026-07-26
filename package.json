@@ -1,7 +1,7 @@
 {
   "name": "llm-translator",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Translate, rewrite, and refine selected text in the Chrome side panel.",
   "author": "ShinChven <shinchven@gmail.com>",
   "license": "MIT",
