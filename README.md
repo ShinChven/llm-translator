@@ -4,10 +4,6 @@ A Chrome side-panel extension that translates, rewrites and explains selected te
 
 Your API keys stay in your browser profile. Requests go straight from Chrome to the provider you picked; there is no backend in between.
 
-<p align="center">
-  <img src="docs/images/translate.png" alt="LLM Translator side panel translating a sentence into Chinese" width="380">
-</p>
-
 ## Features
 
 - **Side panel, not a popup.** Select text on any page, choose **Translate** from the context menu — or press **Alt+T** (**Option+T** on macOS) — and the panel opens beside the page instead of over it. Rebind the shortcut at `chrome://extensions/shortcuts`.
@@ -22,13 +18,24 @@ Your API keys stay in your browser profile. Requests go straight from Chrome to 
 
 ## Screenshots
 
-| Word mode | Text-to-speech |
-| --- | --- |
-| <img src="docs/images/word.png" alt="Dictionary entry for the word serendipity" width="330"> | <img src="docs/images/speech.png" alt="Text-to-speech settings with engine and voice selection" width="330"> |
-
-<p align="center">
-  <img src="docs/images/settings.png" alt="Provider, language and speech settings" width="330">
-</p>
+<table>
+  <tr>
+    <th>Translate</th>
+    <th>Word mode</th>
+  </tr>
+  <tr>
+    <td><img src="docs/images/translate.png" alt="LLM Translator side panel translating a sentence into Chinese" width="330"></td>
+    <td><img src="docs/images/word.png" alt="Dictionary entry for the word serendipity" width="330"></td>
+  </tr>
+  <tr>
+    <th>Text-to-speech</th>
+    <th>Settings</th>
+  </tr>
+  <tr>
+    <td><img src="docs/images/speech.png" alt="Text-to-speech settings with engine and voice selection" width="330"></td>
+    <td><img src="docs/images/settings.png" alt="Provider, language and page summary settings" width="330"></td>
+  </tr>
+</table>
 
 ## Install
 
