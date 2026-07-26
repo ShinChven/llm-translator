@@ -1,112 +1,169 @@
 # LLM Translator
 
-A Chrome Manifest V3 extension for translating and transforming selected text in
-the browser side panel.
+A Chrome side-panel extension that translates, rewrites and explains selected
+text using the model provider of your choice — OpenAI, Gemini, Claude, Grok,
+OpenRouter, or your own LiteLLM proxy.
 
-The product specification lives in [`docs/`](./docs/README.md).
+Your API keys stay in your browser profile. Requests go straight from Chrome to
+the provider you picked; there is no backend in between.
 
-Inspired by
-[nextai-translator](https://github.com/nextai-translator/nextai-translator). The
-`nextai-translator/` directory is a reference project only; the extension in this
-repository is an independent implementation.
+<p align="center">
+  <img src="docs/images/translate.png" alt="LLM Translator side panel translating a sentence into Chinese" width="380">
+</p>
 
-## Implemented foundation
+## Features
 
-- Chrome context-menu entry for selected text.
-- Chrome side-panel interface with Source above Result.
-- Single-result revision flow. Revision instructions replace the result and do
-  not create a conversation.
-- Built-in Translate, Polish, Summarize, What, How, and Why actions.
-- Custom actions with create, edit, reorder, and delete controls.
-- OpenAI, Gemini, Claude, Grok, and OpenRouter using fixed official API
-  endpoints, plus a configurable self-hosted LiteLLM Proxy provider.
-- Provider model discovery with provider-specific defaults.
-- Strict structured output with visible `result` text and internal exchange text.
-- Streaming result updates.
-- Text-to-speech for the source and the result, with a selectable engine:
-  Chrome's built-in Web Speech API by default, or Gemini TTS or the OpenAI
-  Speech API using the key already configured for that provider. Cloud audio
-  streams as it is generated and is cached for instant replay.
-- Material Design 3 light and dark themes.
+- **Side panel, not a popup.** Select text on any page, choose **Translate**
+  from the context menu, and the panel opens beside the page instead of over it.
+- **Six built-in actions.** Translate, Polish, Summarize, What, How, Why.
+- **Word mode.** Translating a single word returns a full dictionary entry —
+  pronunciation, senses by part of speech, bilingual examples, and etymology —
+  instead of a bare gloss.
+- **Refine without a chat log.** Follow-up instructions like *"make it shorter
+  and more formal"* replace the result in place. One pane, no conversation to
+  scroll.
+- **Language exchange.** Swap source and target in one click to translate a
+  result back.
+- **Custom actions.** Define your own prompts with `${text}`, `${sourceLang}`
+  and `${targetLang}` placeholders, and optionally pin each to a specific
+  provider and model.
+- **Text-to-speech.** Read the source or the result aloud, using Chrome's built-in
+  speech engine or a cloud voice.
+- **Streaming results** and **Material Design 3** light and dark themes.
 
-## Develop
+## Screenshots
 
-Requirements:
+| Word mode | Text-to-speech |
+| --- | --- |
+| <img src="docs/images/word.png" alt="Dictionary entry for the word serendipity" width="330"> | <img src="docs/images/speech.png" alt="Text-to-speech settings with engine and voice selection" width="330"> |
 
-- Node.js 22 or newer.
-- Chrome 116 or newer.
+<p align="center">
+  <img src="docs/images/settings.png" alt="Provider, language and speech settings" width="330">
+</p>
 
-Install and build:
+## Install
+
+### From a release
+
+1. Download `llm-translator-VERSION-chrome.zip` from
+   [Releases](https://github.com/ShinChven/llm-translator/releases) and unzip it.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Choose **Load unpacked** and select the unzipped folder.
+
+### From source
+
+Requires Node.js 22+ and Chrome 116+.
 
 ```bash
 npm install
 npm run build
 ```
 
-For rebuilds while editing:
+Then load the generated `dist/` directory with **Load unpacked**, as above.
+
+## Set up a provider
+
+Open the panel from Chrome's toolbar, go to **Settings**, pick a provider and
+paste an API key. **Discover available models** fills the model list from the
+provider's own API.
+
+| Provider | Endpoint | Default model |
+| --- | --- | --- |
+| OpenAI | `api.openai.com` | `gpt-5.6-luna` |
+| Gemini | `generativelanguage.googleapis.com` | `gemini-3.5-flash-lite` |
+| Claude | `api.anthropic.com` | `claude-haiku-4-5` |
+| Grok | `api.x.ai` | `grok-latest` |
+| OpenRouter | `openrouter.ai` | `openrouter/auto` |
+| LiteLLM | your own host | discovered |
+
+The five hosted providers are locked to their official domains. LiteLLM is the
+only provider with a configurable Base URL, and Chrome asks for access to that
+host only when you save settings or discover models.
+
+## Text-to-speech
+
+The speech engine is chosen separately from the text model provider, so you can
+translate with one and listen with another.
+
+| Engine | Needs a key | Notes |
+| --- | --- | --- |
+| **Browser** (default) | No | Chrome's Web Speech API. Starts instantly, works offline, uses your system voices. |
+| Gemini | Gemini key | `gemini-3.1-flash-tts-preview`, 30 voices, broad language coverage. |
+| OpenAI | OpenAI key | `gpt-4o-mini-tts`, 13 voices. |
+
+Cloud engines stream audio as it is generated rather than waiting for the whole
+clip, and each finished clip is cached in memory, so replaying the same text
+costs nothing. A cloud engine is selectable only once its provider has a key.
+
+Voices are grouped by gender to make them easier to choose between. No provider
+publishes gender as data, so that grouping is curated and approximate — preview
+a voice to confirm.
+
+## Actions
+
+| Action | What it does |
+| --- | --- |
+| Translate | Translates into the target language. A single word switches to word mode. |
+| Polish | Rewrites for clarity, keeping the original language. |
+| Summarize | Condenses the source. |
+| What / How / Why | Explains the source, answering in the target language. |
+
+Custom actions appear alongside these and support a role prompt, a command
+prompt, an output format (plain text, Markdown, LaTeX), and optional
+provider/model overrides.
+
+## Privacy
+
+- API keys are stored in `chrome.storage.local`, scoped to your browser profile.
+- Source text is sent only to the provider you selected for that request.
+- Generated audio is cached in memory only and is discarded when the panel closes.
+- The extension requests `contextMenus`, `sidePanel` and `storage`, plus network
+  access to the fixed provider domains. Access to a LiteLLM host is optional and
+  requested only when you configure one.
+
+## Development
 
 ```bash
-npm run dev
+npm run dev        # rebuild on change
+npm run typecheck  # tsc --noEmit
+npm run build      # typecheck, then production build
 ```
 
-## Load in Chrome
-
-1. Open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Select **Load unpacked**.
-4. Choose the generated `dist/` directory.
-5. Open the extension from Chrome's toolbar, or select text on a page and use
-   **Translate** from the context menu.
-6. Open **Settings**, add an OpenAI or Gemini API key, and optionally discover
-   additional available models.
-
-API keys are stored in `chrome.storage.local` for the current browser profile.
-The five hosted providers use only their fixed official API domains. LiteLLM is
-the sole provider with a configurable Base URL; Chrome requests optional access
-only to the configured LiteLLM host when the user saves or discovers models.
-
-## Commands
-
-```bash
-npm run typecheck
-npm run build
-```
+The product specification lives in [`docs/`](./docs/README.md) — start with
+[functional-design.md](./docs/functional-design.md) for the requirements and
+[provider-architecture.md](./docs/provider-architecture.md) for how providers
+are wired.
 
 ## Releases
 
-GitHub Actions publishes a release whenever a `vMAJOR.MINOR.PATCH` tag is
-pushed. The workflow:
-
-1. Verifies that the tag matches `package.json`, `package-lock.json`, and
-   `public/manifest.json`.
-2. Installs locked dependencies and builds the extension.
-3. Packages the contents of `dist/` as
-   `llm-translator-VERSION-chrome.zip`.
-4. Generates `SHA256SUMS.txt`.
-5. Creates a GitHub Release with generated release notes and both assets.
-
-For example, after setting all project versions to `0.1.0`:
+Pushing a `vMAJOR.MINOR.PATCH` tag triggers a GitHub Actions release. The
+workflow verifies that the tag matches `package.json`, `package-lock.json` and
+`public/manifest.json`, builds the extension, packages `dist/` as
+`llm-translator-VERSION-chrome.zip`, generates `SHA256SUMS.txt`, and publishes a
+GitHub Release with both assets.
 
 ```bash
+npm run verify:release-tag -- v0.1.0   # check the versions agree first
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
 Prerelease tags such as `v0.2.0-beta.1` create a GitHub prerelease.
-`package.json` and `package-lock.json` use the complete prerelease version,
-while Chrome's `manifest.json` uses the numeric core version (`0.2.0`).
+`package.json` and `package-lock.json` carry the full prerelease version, while
+Chrome's `manifest.json` uses the numeric core version (`0.2.0`).
 
-## Current implementation scope
+## Not yet implemented
 
-This build establishes the complete processing path and provider abstraction.
-The broader product requirements also specify history, OCR, vocabulary, and
-rich Markdown/LaTeX rendering. Those modules are intentionally separate from the
-initial processing foundation and are tracked in the product documents.
+The product documents also specify history, OCR, vocabulary, and rich
+Markdown/LaTeX rendering. Those are tracked in [`docs/`](./docs/README.md) and
+are deliberately separate from the processing foundation this build establishes.
 
 ## Credits
 
 Inspired by
-[nextai-translator](https://github.com/nextai-translator/nextai-translator).
+[nextai-translator](https://github.com/nextai-translator/nextai-translator). The
+`nextai-translator/` directory in this repository is a reference project only;
+this extension is an independent implementation.
 
 ## Author
 
