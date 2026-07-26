@@ -13,12 +13,30 @@ import type {
   ProviderId,
   RuntimeRequest,
   ModelListResponse,
+  PageContentErrorCode,
   PageContentResponse,
 } from "./shared/types";
 
 const PROCESS_SELECTION = "process-selection";
 const OPEN_TRANSLATOR = "open-translator";
 const TRANSLATE_SELECTION_COMMAND = "translate-selection";
+
+class PageReadError extends Error {
+  constructor(
+    readonly code: PageContentErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "PageReadError";
+  }
+}
+
+function isPageAccessError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /cannot access contents|host permission|permission to access/i.test(
+    error.message,
+  );
+}
 
 async function ensureProviderHostPermission(
   provider: ProviderId,
@@ -211,71 +229,192 @@ chrome.runtime.onMessage.addListener(
             lastFocusedWindow: true,
           });
           if (tab?.id === undefined) {
-            throw new Error("No active webpage was found.");
+            throw new PageReadError(
+              "read-failed",
+              "No active webpage was found.",
+            );
           }
 
-          const [injection] = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-              const root =
-                document.querySelector("article") ??
-                document.querySelector("main") ??
-                document.body;
-              if (!root) return { title: document.title, content: "" };
+          const pageUrl = tab.pendingUrl ?? tab.url;
+          if (!pageUrl) {
+            throw new PageReadError(
+              "page-access-required",
+              "Page access is required after opening or switching websites.",
+            );
+          }
 
-              const copy = root.cloneNode(true) as HTMLElement;
-              copy
-                .querySelectorAll(
-                  [
-                    "script",
-                    "style",
-                    "noscript",
-                    "nav",
-                    "header",
-                    "footer",
-                    "aside",
-                    "form",
-                    "button",
-                    "input",
-                    "select",
-                    "textarea",
-                    "svg",
-                    "canvas",
-                    "dialog",
-                    "[hidden]",
-                    '[aria-hidden="true"]',
-                  ].join(","),
-                )
-                .forEach((element) => element.remove());
+          let parsedPageUrl: URL;
+          try {
+            parsedPageUrl = new URL(pageUrl);
+          } catch {
+            throw new PageReadError(
+              "unsupported-page",
+              "This page does not have a readable web address.",
+            );
+          }
 
-              const content = (copy.innerText || copy.textContent || "")
-                .replace(/\u00a0/g, " ")
-                .replace(/[ \t]+\n/g, "\n")
-                .replace(/\n{3,}/g, "\n\n")
-                .trim()
-                .slice(0, 120_000);
-              return { title: document.title.trim(), content };
-            },
-          });
+          const isChromeWebStore =
+            parsedPageUrl.hostname === "chromewebstore.google.com" ||
+            (parsedPageUrl.hostname === "chrome.google.com" &&
+              parsedPageUrl.pathname.startsWith("/webstore"));
+          if (
+            (parsedPageUrl.protocol !== "http:" &&
+              parsedPageUrl.protocol !== "https:") ||
+            isChromeWebStore
+          ) {
+            throw new PageReadError(
+              "unsupported-page",
+              "Chrome does not allow extensions to read this page.",
+            );
+          }
 
-          const page = injection?.result;
-          if (!page?.content) {
-            throw new Error("No readable content was found on this page.");
+          const readFrames = (allFrames: boolean) =>
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id as number, allFrames },
+              func: async () => {
+                if (document.readyState === "loading") {
+                  await new Promise<void>((resolve) => {
+                    const timeout = window.setTimeout(resolve, 2_500);
+                    document.addEventListener(
+                      "DOMContentLoaded",
+                      () => {
+                        window.clearTimeout(timeout);
+                        resolve();
+                      },
+                      { once: true },
+                    );
+                  });
+                }
+
+                const normalize = (value: string) =>
+                  value
+                    .replace(/\u00a0/g, " ")
+                    .replace(/[ \t]+\n/g, "\n")
+                    .replace(/\n{3,}/g, "\n\n")
+                    .trim();
+                const removable = [
+                  "script",
+                  "style",
+                  "noscript",
+                  "template",
+                  "nav",
+                  "header",
+                  "footer",
+                  "aside",
+                  "form",
+                  "button",
+                  "input",
+                  "select",
+                  "textarea",
+                  "svg",
+                  "canvas",
+                  "dialog",
+                  "[hidden]",
+                  "[inert]",
+                  '[aria-hidden="true"]',
+                ].join(",");
+                const articles =
+                  document.querySelectorAll<HTMLElement>("article");
+                const candidates = [
+                  articles.length === 1 ? articles[0] : null,
+                  document.querySelector<HTMLElement>("main"),
+                  document.querySelector<HTMLElement>('[role="main"]'),
+                  document.body,
+                ];
+                const seenRoots = new Set<HTMLElement>();
+                const cleanedCandidates: string[] = [];
+
+                for (const root of candidates) {
+                  if (!root || seenRoots.has(root)) continue;
+                  seenRoots.add(root);
+                  const copy = root.cloneNode(true) as HTMLElement;
+                  copy
+                    .querySelectorAll(removable)
+                    .forEach((element) => element.remove());
+                  const text = normalize(copy.innerText || copy.textContent || "");
+                  if (text) cleanedCandidates.push(text);
+                }
+
+                const preferred =
+                  cleanedCandidates.find((text) => text.length >= 200) ??
+                  cleanedCandidates.reduce(
+                    (longest, text) =>
+                      text.length > longest.length ? text : longest,
+                    "",
+                  );
+                const visibleFallback = normalize(
+                  document.body?.innerText ??
+                    document.documentElement?.textContent ??
+                    "",
+                );
+                return {
+                  title:
+                    document.title.trim() ||
+                    document.querySelector("h1")?.textContent?.trim() ||
+                    "",
+                  content: (preferred || visibleFallback).slice(0, 120_000),
+                };
+              },
+            });
+
+          let injections;
+          try {
+            injections = await readFrames(true).catch(() => readFrames(false));
+          } catch (error) {
+            if (isPageAccessError(error)) {
+              throw new PageReadError(
+                "page-access-required",
+                "Page access is required after opening or switching websites.",
+              );
+            }
+            console.warn("LLM Translator: could not read the page.", error);
+            throw new PageReadError(
+              "read-failed",
+              "The page could not be read. Reload it and try again.",
+            );
+          }
+
+          const orderedFrames = [...injections].sort(
+            (left, right) => left.frameId - right.frameId,
+          );
+          const mainFrame = orderedFrames.find(
+            (injection) => injection.frameId === 0,
+          );
+          const seenContent = new Set<string>();
+          const content = orderedFrames
+            .flatMap((injection) => {
+              const frameContent = injection.result?.content.trim();
+              if (!frameContent || seenContent.has(frameContent)) return [];
+              seenContent.add(frameContent);
+              return frameContent;
+            })
+            .join("\n\n")
+            .slice(0, 120_000);
+          if (!content) {
+            throw new PageReadError(
+              "no-readable-content",
+              "No readable text was found. Wait for the page to finish loading, then try again.",
+            );
           }
           sendResponse({
             ok: true,
-            title: page.title,
-            content: page.title
-              ? `${page.title}\n\n${page.content}`
-              : page.content,
+            title: mainFrame?.result?.title ?? "",
+            content: mainFrame?.result?.title
+              ? `${mainFrame.result.title}\n\n${content}`
+              : content,
           });
         } catch (error) {
+          const pageError =
+            error instanceof PageReadError
+              ? error
+              : new PageReadError(
+                  "read-failed",
+                  "The page could not be read. Reload it and try again.",
+                );
           sendResponse({
             ok: false,
-            error:
-              error instanceof Error
-                ? `Could not read this page. ${error.message} Try an ordinary http(s) page opened through the extension.`
-                : "Could not read this page.",
+            code: pageError.code,
+            error: pageError.message,
           });
         }
       })();

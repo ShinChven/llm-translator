@@ -130,6 +130,12 @@ export type ModelListResponse =
   | { ok: true; models: string[] }
   | { ok: false; error: string };
 
+export type PageContentErrorCode =
+  | "page-access-required"
+  | "unsupported-page"
+  | "no-readable-content"
+  | "read-failed";
+
 export type PageContentResponse =
   | { ok: true; content: string; title: string }
-  | { ok: false; error: string };
+  | { ok: false; code: PageContentErrorCode; error: string };

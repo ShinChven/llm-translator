@@ -360,6 +360,8 @@ Output handling follows these rules:
 - The extension displays only `result`. `swapText` is internal metadata used by language exchange.
 - For ordinary transformations, `swapText` equals `result`.
 - For word mode, `swapText` contains one primary target-language translation without dictionary details.
+- Built-in summaries require readable prose or bullet points inside `result`, never a serialized data object.
+- If a provider nevertheless serializes an object inside `result`, complete objects are converted to readable headings and lists; incomplete nested JSON is not shown while streaming.
 - Output that cannot be parsed or does not satisfy the schema does not update the current result.
 - Invalid output preserves the current result and provides Retry and Change Model actions.
 - When safe incremental parsing is available, `result` streams into the primary result pane.

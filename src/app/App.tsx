@@ -65,6 +65,8 @@ import { WordResult } from "./WordResult";
 
 type View = "process" | "settings";
 
+const PAGE_ACCESS_ORIGINS = ["http://*/*", "https://*/*"];
+
 const ActionEmojiPicker = lazy(() =>
   import("./ActionEmojiPicker").then((module) => ({
     default: module.ActionEmojiPicker,
@@ -98,6 +100,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [readingPage, setReadingPage] = useState(false);
   const [error, setError] = useState("");
+  const [pageAccessRequired, setPageAccessRequired] = useState(false);
   const [copied, setCopied] = useState(false);
   const [autoRunTaskId, setAutoRunTaskId] = useState<string>();
   const [pendingTaskInitializationId, setPendingTaskInitializationId] =
@@ -405,35 +408,77 @@ export function App() {
     }
   };
 
-  const summarizeCurrentPage = async () => {
-    setReadingPage(true);
-    setError("");
-    try {
-      const request: RuntimeRequest = { type: "read-page-content" };
-      const response = (await chrome.runtime.sendMessage(
-        request,
-      )) as PageContentResponse | undefined;
-      if (!response) {
-        throw new Error(
-          "No response from background service worker. Please reload the extension in chrome://extensions.",
-        );
-      }
-      if (!response.ok) throw new Error(response.error);
+  const readAndSummarizeCurrentPage = async () => {
+    const request: RuntimeRequest = { type: "read-page-content" };
+    const response = (await chrome.runtime.sendMessage(
+      request,
+    )) as PageContentResponse | undefined;
+    if (!response) {
+      throw new Error(
+        "No response from the background service worker. Reload the extension in chrome://extensions.",
+      );
+    }
+    if (!response.ok) {
+      setPageAccessRequired(response.code === "page-access-required");
+      throw new Error(response.error);
+    }
 
-      setSource(response.content);
-      setActionId("summarize");
-      setResult("");
-      setSwapText("");
-      setRevision("");
-      setAutoRunTaskId(makeId());
-      setView("process");
+    setPageAccessRequired(false);
+    setSource(response.content);
+    setActionId("summarize");
+    setResult("");
+    setSwapText("");
+    setRevision("");
+    setAutoRunTaskId(makeId());
+    setView("process");
+  };
+
+  const summarizeCurrentPage = () => {
+    setReadingPage(true);
+    setPageAccessRequired(false);
+    setError("");
+    void readAndSummarizeCurrentPage()
+      .catch((error) =>
+        setError(
+          error instanceof Error ? error.message : "Could not read this page.",
+        ),
+      )
+      .finally(() => setReadingPage(false));
+  };
+
+  const grantPageAccessAndRetry = () => {
+    let authorization: Promise<boolean>;
+    try {
+      // Start the permission request synchronously inside this click gesture.
+      authorization = chrome.permissions.request({
+        origins: PAGE_ACCESS_ORIGINS,
+      });
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Could not read this page.",
+        error instanceof Error
+          ? error.message
+          : "Could not request page access.",
       );
-    } finally {
-      setReadingPage(false);
+      return;
     }
+
+    setReadingPage(true);
+    setError("");
+    void authorization
+      .then((granted) => {
+        if (!granted) {
+          throw new Error(
+            "Page access was not granted. Reopen the extension on this page to use temporary access.",
+          );
+        }
+        return readAndSummarizeCurrentPage();
+      })
+      .catch((error) =>
+        setError(
+          error instanceof Error ? error.message : "Could not read this page.",
+        ),
+      )
+      .finally(() => setReadingPage(false));
   };
 
   if (!settings) {
@@ -510,9 +555,14 @@ export function App() {
           canGenerate={canGenerate}
           copied={copied}
           error={error}
+          pageAccessRequired={pageAccessRequired}
           onActionChange={executeAction}
           onCopy={copyResult}
-          onDismissError={() => setError("")}
+          onDismissError={() => {
+            setError("");
+            setPageAccessRequired(false);
+          }}
+          onGrantPageAccess={grantPageAccessAndRetry}
           onGenerate={() => runGeneration()}
           onOpenSettings={() => setView("settings")}
           onRevisionChange={setRevision}
@@ -561,6 +611,7 @@ interface ProcessViewProps {
   canGenerate: boolean;
   copied: boolean;
   error: string;
+  pageAccessRequired: boolean;
   result: string;
   swapText: string;
   revision: string;
@@ -575,6 +626,7 @@ interface ProcessViewProps {
   onCopy: () => void;
   onDismissError: () => void;
   onGenerate: () => void;
+  onGrantPageAccess: () => void;
   onOpenSettings: () => void;
   onRevisionChange: (value: string) => void;
   onRevise: () => void;
@@ -591,6 +643,7 @@ function ProcessView({
   canGenerate,
   copied,
   error,
+  pageAccessRequired,
   result,
   swapText,
   revision,
@@ -605,6 +658,7 @@ function ProcessView({
   onCopy,
   onDismissError,
   onGenerate,
+  onGrantPageAccess,
   onOpenSettings,
   onRevisionChange,
   onRevise,
@@ -915,13 +969,23 @@ function ProcessView({
           {error && (
             <div className="error-banner" role="alert">
               <span>{error}</span>
-              <button
-                className="icon-button small"
-                aria-label="Dismiss error"
-                onClick={onDismissError}
-              >
-                <Icon name="close" size={20} />
-              </button>
+              <div className="error-actions">
+                {pageAccessRequired && (
+                  <button
+                    className="text-button compact"
+                    onClick={onGrantPageAccess}
+                  >
+                    Grant access and retry
+                  </button>
+                )}
+                <button
+                  className="icon-button small"
+                  aria-label="Dismiss error"
+                  onClick={onDismissError}
+                >
+                  <Icon name="close" size={20} />
+                </button>
+              </div>
             </div>
           )}
           {speaker.error && (

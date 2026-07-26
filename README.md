@@ -94,8 +94,8 @@ Custom actions appear alongside these and support a role prompt, a command promp
 - API keys are stored in `chrome.storage.local`, scoped to your browser profile.
 - Source text is sent only to the provider you selected for that request.
 - Generated audio is cached in memory only and is discarded when the panel closes.
-- The extension requests `activeTab`, `contextMenus`, `scripting`, `sidePanel` and `storage`, plus network access to the fixed provider domains. Access to a LiteLLM host is optional and requested only when you configure one.
-- `activeTab` and `scripting` read the current selection for the keyboard shortcut and the current page only when you press **Summarize current page**. `activeTab` grants temporary access after you invoke the extension, so the extension has no standing permission to read any site.
+- The extension requests `activeTab`, `contextMenus`, `scripting`, `sidePanel` and `storage`, plus network access to the fixed provider domains. Access to a LiteLLM host and persistent access to ordinary webpages are optional.
+- `activeTab` and `scripting` read the current selection and page only after you invoke the extension. This temporary access is revoked after a cross-origin navigation. If that happens while the side panel remains open, **Summarize current page** offers an explicit **Grant access and retry** action. Persistent webpage access is requested only after you choose that action.
 
 ## Development
 

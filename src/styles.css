@@ -892,6 +892,23 @@ textarea:disabled {
   color: var(--md-sys-color-on-error-container);
 }
 
+.error-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.error-banner > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.error-actions .text-button {
+  color: inherit;
+  white-space: nowrap;
+}
+
 .revision-composer {
   position: relative;
   z-index: 8;

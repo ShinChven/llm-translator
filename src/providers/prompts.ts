@@ -23,8 +23,11 @@ const SUMMARY_LENGTH_INSTRUCTIONS = {
   medium:
     "Give a balanced summary with the main idea, key facts, and conclusions in roughly 5 to 8 bullet points or equivalent prose.",
   long:
-    "Give a detailed, structured summary covering the main argument, important facts, supporting context, and conclusions without unnecessary repetition.",
+    "Give a detailed plain-text summary covering the main argument, important facts, supporting context, and conclusions without unnecessary repetition. Use short headings and bullet points when helpful.",
 } as const;
+
+const SUMMARY_FORMAT_INSTRUCTION =
+  "Return the summary as readable prose or bullet points inside result. Never encode the summary as JSON, XML, YAML, or a key-value object.";
 
 export function buildPrompts(request: GenerationRequest): {
   system: string;
@@ -103,6 +106,7 @@ export function buildPrompts(request: GenerationRequest): {
       ? [
           ACTION_INSTRUCTIONS.summarize,
           SUMMARY_LENGTH_INSTRUCTIONS[request.summaryLength ?? "medium"],
+          SUMMARY_FORMAT_INSTRUCTION,
           request.summaryInstruction?.trim()
             ? `Follow this user-defined summary style instruction: ${request.summaryInstruction.trim()}`
             : "",
