@@ -19,6 +19,7 @@ import {
   SPEECH_PROVIDER_DEFINITIONS,
   SPEECH_PROVIDER_IDS,
   STORAGE_KEYS,
+  SUMMARY_LENGTH_OPTIONS,
   THEME_OPTIONS,
   extensionVersion,
   languageName,
@@ -50,10 +51,11 @@ import type {
   GenerationPortMessage,
   GenerationRequest,
   PendingTask,
+  PageContentResponse,
   ProcessTaskMessage,
   ProviderId,
   RuntimeRequest,
-  RuntimeResponse,
+  ModelListResponse,
 } from "../shared/types";
 import { Icon } from "./Icon";
 import { ShareMenu } from "./ShareMenu";
@@ -94,6 +96,7 @@ export function App() {
   const [actionId, setActionId] = useState<ActionId>("translate");
   const [revision, setRevision] = useState("");
   const [busy, setBusy] = useState(false);
+  const [readingPage, setReadingPage] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [autoRunTaskId, setAutoRunTaskId] = useState<string>();
@@ -200,6 +203,14 @@ export function App() {
     DEFAULT_MODELS[activeProvider];
   const activeProviderDefinition = PROVIDER_DEFINITIONS[activeProvider];
   const activeProviderSettings = settings?.providers[activeProvider];
+  const activeProviderConfigured = Boolean(
+    activeProviderSettings &&
+      (!activeProviderDefinition.apiKeyRequired ||
+        activeProviderSettings.apiKey.trim()) &&
+      (!activeProviderDefinition.configurableBaseUrl ||
+        activeProviderSettings.baseUrl.trim()) &&
+      activeModel.trim(),
+  );
 
   const detectedSourceLanguage = useMemo(() => {
     if (settings?.sourceLanguage !== "auto" || !source.trim()) return undefined;
@@ -253,12 +264,7 @@ export function App() {
       source.trim() &&
       effectiveSourceLanguage &&
       effectiveTargetLanguage &&
-      activeProviderSettings &&
-      (!activeProviderDefinition.apiKeyRequired ||
-        activeProviderSettings.apiKey.trim()) &&
-      (!activeProviderDefinition.configurableBaseUrl ||
-        activeProviderSettings.baseUrl.trim()) &&
-      activeModel.trim(),
+      activeProviderConfigured,
   );
 
   const runGeneration = useCallback(
@@ -287,6 +293,12 @@ export function App() {
         customOutputFormat: selectedCustomAction?.outputFormat,
         sourceLanguage: effectiveSourceLanguage ?? settings.sourceLanguage,
         targetLanguage: effectiveTargetLanguage ?? settings.targetLanguage,
+        summaryLength:
+          actionId === "summarize" ? settings.summaryLength : undefined,
+        summaryInstruction:
+          actionId === "summarize"
+            ? settings.summaryInstruction.trim()
+            : undefined,
         source: source.trim(),
         currentResult: revisionInstruction ? result : undefined,
         revisionInstruction,
@@ -393,6 +405,37 @@ export function App() {
     }
   };
 
+  const summarizeCurrentPage = async () => {
+    setReadingPage(true);
+    setError("");
+    try {
+      const request: RuntimeRequest = { type: "read-page-content" };
+      const response = (await chrome.runtime.sendMessage(
+        request,
+      )) as PageContentResponse | undefined;
+      if (!response) {
+        throw new Error(
+          "No response from background service worker. Please reload the extension in chrome://extensions.",
+        );
+      }
+      if (!response.ok) throw new Error(response.error);
+
+      setSource(response.content);
+      setActionId("summarize");
+      setResult("");
+      setSwapText("");
+      setRevision("");
+      setAutoRunTaskId(makeId());
+      setView("process");
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Could not read this page.",
+      );
+    } finally {
+      setReadingPage(false);
+    }
+  };
+
   if (!settings) {
     return (
       <div className="loading-screen" aria-label="Loading">
@@ -433,13 +476,28 @@ export function App() {
           )}
         </h1>
         {view === "process" && (
-          <button
-            className="icon-button"
-            aria-label="Open settings"
-            onClick={() => setView("settings")}
-          >
-            <Icon name="settings" />
-          </button>
+          <div className="header-actions">
+            <button
+              className="icon-button"
+              aria-label={
+                readingPage
+                  ? "Reading current page"
+                  : "Summarize current page"
+              }
+              title={`Summarize current page · ${settings.summaryLength} · ${languageName(settings.targetLanguage)}`}
+              disabled={busy || readingPage || !activeProviderConfigured}
+              onClick={summarizeCurrentPage}
+            >
+              <Icon name="article" />
+            </button>
+            <button
+              className="icon-button"
+              aria-label="Open settings"
+              onClick={() => setView("settings")}
+            >
+              <Icon name="settings" />
+            </button>
+          </div>
         )}
       </header>
 
@@ -988,7 +1046,12 @@ function SettingsView({
       const request: RuntimeRequest = { type: "list-models", provider };
       const response = (await chrome.runtime.sendMessage(
         request,
-      )) as RuntimeResponse;
+      )) as ModelListResponse | undefined;
+      if (!response) {
+        throw new Error(
+          "No response from background service worker. Please reload the extension in chrome://extensions.",
+        );
+      }
       if (!response.ok) throw new Error(response.error);
       updateProvider(provider, { discoveredModels: response.models });
     } catch (error) {
@@ -1221,6 +1284,60 @@ function SettingsView({
         <p className="supporting-text">
           New context-menu translations start with this target. Changing the
           target on the main screen affects only the current task.
+        </p>
+      </section>
+
+      <section className="settings-section" aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Page summary</h2>
+        <p className="section-description">
+          Choose how much detail to include when summarizing the current page.
+          The summary uses the target language selected in the panel.
+        </p>
+        <div
+          className="provider-grid summary-length-grid"
+          role="radiogroup"
+          aria-label="Summary length"
+        >
+          {SUMMARY_LENGTH_OPTIONS.map((option) => (
+            <button
+              aria-checked={settings.summaryLength === option.id}
+              className={settings.summaryLength === option.id ? "selected" : ""}
+              key={option.id}
+              onClick={() =>
+                onSettingsChange({ ...settings, summaryLength: option.id })
+              }
+              role="radio"
+              title={option.description}
+            >
+              {settings.summaryLength === option.id && (
+                <Icon name="check" size={18} />
+              )}
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <p className="supporting-text">
+          Automatic playback follows “Automatically speak results” under
+          Text-to-speech.
+        </p>
+        <label className="outlined-field">
+          <span>Custom instruction · optional</span>
+          <textarea
+            maxLength={2000}
+            placeholder="e.g. Start with a one-sentence takeaway, then list key facts and risks in bullet points."
+            rows={4}
+            value={settings.summaryInstruction}
+            onChange={(event) =>
+              onSettingsChange({
+                ...settings,
+                summaryInstruction: event.target.value,
+              })
+            }
+          />
+        </label>
+        <p className="supporting-text">
+          Controls the summary’s tone, structure, and emphasis. The selected
+          length and target language still apply.
         </p>
       </section>
 

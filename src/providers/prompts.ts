@@ -17,6 +17,15 @@ const ACTION_INSTRUCTIONS: Record<string, string> = {
     "Explain why the source exists, matters, behaves this way, or was designed this way. Focus on reasons, purpose, motivation, and tradeoffs.",
 };
 
+const SUMMARY_LENGTH_INSTRUCTIONS = {
+  short:
+    "Keep the summary brief: one compact paragraph or up to 3 bullet points.",
+  medium:
+    "Give a balanced summary with the main idea, key facts, and conclusions in roughly 5 to 8 bullet points or equivalent prose.",
+  long:
+    "Give a detailed, structured summary covering the main argument, important facts, supporting context, and conclusions without unnecessary repetition.",
+} as const;
+
 export function buildPrompts(request: GenerationRequest): {
   system: string;
   user: string;
@@ -26,7 +35,7 @@ export function buildPrompts(request: GenerationRequest): {
     "Never chat with the user.",
     "Never add acknowledgements, prefaces, explanations, offers, or follow-up questions unless the requested transformation itself requires explanatory content.",
     'Return exactly one JSON object matching {"result":"string","swapText":"string"}.',
-    "The result field must contain only the finished transformed text.",
+    "The result field must contain directly the finished transformed text without any nested JSON objects.",
     "Unless a later instruction defines a special swapText value, swapText must exactly equal result.",
   ].join(" ");
 
@@ -90,8 +99,16 @@ export function buildPrompts(request: GenerationRequest): {
   }
 
   const actionInstruction =
-    ACTION_INSTRUCTIONS[request.actionId] ??
-    ACTION_INSTRUCTIONS.translate;
+    request.actionId === "summarize"
+      ? [
+          ACTION_INSTRUCTIONS.summarize,
+          SUMMARY_LENGTH_INSTRUCTIONS[request.summaryLength ?? "medium"],
+          request.summaryInstruction?.trim()
+            ? `Follow this user-defined summary style instruction: ${request.summaryInstruction.trim()}`
+            : "",
+        ].join(" ")
+      : (ACTION_INSTRUCTIONS[request.actionId] ??
+        ACTION_INSTRUCTIONS.translate);
 
   const wordMode =
     request.actionId === "translate" &&
@@ -133,7 +150,7 @@ export function buildPrompts(request: GenerationRequest): {
     };
   }
 
-  const targetLanguageAction = ["what", "how", "why"].includes(
+  const targetLanguageAction = ["summarize", "what", "how", "why"].includes(
     request.actionId,
   );
   const languageInstructions =

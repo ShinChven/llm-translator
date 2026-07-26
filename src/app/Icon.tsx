@@ -1,5 +1,6 @@
 interface IconProps {
   name:
+    | "article"
     | "arrow-back"
     | "check"
     | "close"
@@ -17,6 +18,8 @@ interface IconProps {
 }
 
 const paths: Record<IconProps["name"], string> = {
+  article:
+    "M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-6 14H7v-2h6v2Zm4-4H7v-2h10v2Zm0-4H7V7h10v2Z",
   "arrow-back": "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2Z",
   check: "m9 16.17-3.59-3.58L4 14l5 5L20 8l-1.41-1.41L9 16.17Z",
   close: "M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13l-6.3 6.71-1.41-1.42L9.17 12l-6.29-6.29L4.29 4.3 10.59 11l6.3-6.7 1.41 1.41Z",

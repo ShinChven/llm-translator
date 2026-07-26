@@ -27,6 +27,8 @@ export interface ProviderSettings {
 
 export type ThemePreference = "system" | "light" | "dark";
 
+export type SummaryLength = "short" | "medium" | "long";
+
 export type ActionOutputFormat = "text" | "markdown" | "latex";
 
 export interface CustomAction {
@@ -56,6 +58,8 @@ export interface AppSettings {
   sourceLanguage: string;
   targetLanguage: string;
   defaultTargetLanguage: string;
+  summaryLength: SummaryLength;
+  summaryInstruction: string;
   providers: Record<ProviderId, ProviderSettings>;
   customActions: CustomAction[];
   speech: SpeechSettings;
@@ -81,6 +85,8 @@ export interface GenerationRequest {
   customOutputFormat?: ActionOutputFormat;
   sourceLanguage: string;
   targetLanguage: string;
+  summaryLength?: SummaryLength;
+  summaryInstruction?: string;
   source: string;
   currentResult?: string;
   revisionInstruction?: string;
@@ -106,16 +112,24 @@ export type GenerationPortEvent =
     }
   | { type: "error"; requestId: string; message: string };
 
-export type RuntimeRequest = {
-  type: "list-models";
-  provider: ProviderId;
-};
+export type RuntimeRequest =
+  | {
+      type: "list-models";
+      provider: ProviderId;
+    }
+  | {
+      type: "read-page-content";
+    };
 
 export type ProcessTaskMessage = {
   type: "process-task";
   task: PendingTask;
 };
 
-export type RuntimeResponse =
+export type ModelListResponse =
   | { ok: true; models: string[] }
+  | { ok: false; error: string };
+
+export type PageContentResponse =
+  | { ok: true; content: string; title: string }
   | { ok: false; error: string };

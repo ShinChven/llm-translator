@@ -12,7 +12,8 @@ import type {
   ProcessTaskMessage,
   ProviderId,
   RuntimeRequest,
-  RuntimeResponse,
+  ModelListResponse,
+  PageContentResponse,
 } from "./shared/types";
 
 const PROCESS_SELECTION = "process-selection";
@@ -200,8 +201,87 @@ chrome.runtime.onMessage.addListener(
   (
     message: RuntimeRequest,
     _sender,
-    sendResponse: (response: RuntimeResponse) => void,
+    sendResponse: (response: ModelListResponse | PageContentResponse) => void,
   ) => {
+    if (message.type === "read-page-content") {
+      void (async () => {
+        try {
+          const [tab] = await chrome.tabs.query({
+            active: true,
+            lastFocusedWindow: true,
+          });
+          if (tab?.id === undefined) {
+            throw new Error("No active webpage was found.");
+          }
+
+          const [injection] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              const root =
+                document.querySelector("article") ??
+                document.querySelector("main") ??
+                document.body;
+              if (!root) return { title: document.title, content: "" };
+
+              const copy = root.cloneNode(true) as HTMLElement;
+              copy
+                .querySelectorAll(
+                  [
+                    "script",
+                    "style",
+                    "noscript",
+                    "nav",
+                    "header",
+                    "footer",
+                    "aside",
+                    "form",
+                    "button",
+                    "input",
+                    "select",
+                    "textarea",
+                    "svg",
+                    "canvas",
+                    "dialog",
+                    "[hidden]",
+                    '[aria-hidden="true"]',
+                  ].join(","),
+                )
+                .forEach((element) => element.remove());
+
+              const content = (copy.innerText || copy.textContent || "")
+                .replace(/\u00a0/g, " ")
+                .replace(/[ \t]+\n/g, "\n")
+                .replace(/\n{3,}/g, "\n\n")
+                .trim()
+                .slice(0, 120_000);
+              return { title: document.title.trim(), content };
+            },
+          });
+
+          const page = injection?.result;
+          if (!page?.content) {
+            throw new Error("No readable content was found on this page.");
+          }
+          sendResponse({
+            ok: true,
+            title: page.title,
+            content: page.title
+              ? `${page.title}\n\n${page.content}`
+              : page.content,
+          });
+        } catch (error) {
+          sendResponse({
+            ok: false,
+            error:
+              error instanceof Error
+                ? `Could not read this page. ${error.message} Try an ordinary http(s) page opened through the extension.`
+                : "Could not read this page.",
+          });
+        }
+      })();
+      return true;
+    }
+
     if (message.type !== "list-models") return false;
 
     void (async () => {

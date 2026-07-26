@@ -6,6 +6,7 @@ import {
   STORAGE_KEYS,
   isProviderId,
   isSpeechProviderId,
+  isSummaryLength,
   isThemePreference,
 } from "./constants";
 import type { AppSettings, CustomAction, PendingTask } from "./types";
@@ -53,6 +54,13 @@ function mergeSettings(value?: Partial<AppSettings>): AppSettings {
       value?.defaultTargetLanguage ??
       value?.targetLanguage ??
       DEFAULT_SETTINGS.defaultTargetLanguage,
+    summaryLength: isSummaryLength(value?.summaryLength)
+      ? value.summaryLength
+      : DEFAULT_SETTINGS.summaryLength,
+    summaryInstruction:
+      typeof value?.summaryInstruction === "string"
+        ? value.summaryInstruction
+        : DEFAULT_SETTINGS.summaryInstruction,
     providers,
     customActions: (
       (value?.customActions ?? []) as Array<

@@ -3,6 +3,7 @@ import type {
   BuiltInActionId,
   ProviderId,
   SpeechProviderId,
+  SummaryLength,
   ThemePreference,
 } from "./types";
 
@@ -14,6 +15,20 @@ export const THEME_OPTIONS: Array<{ id: ThemePreference; label: string }> = [
 
 export function isThemePreference(value: unknown): value is ThemePreference {
   return THEME_OPTIONS.some((option) => option.id === value);
+}
+
+export const SUMMARY_LENGTH_OPTIONS: Array<{
+  id: SummaryLength;
+  label: string;
+  description: string;
+}> = [
+  { id: "short", label: "Short", description: "A quick overview" },
+  { id: "medium", label: "Medium", description: "Key points and context" },
+  { id: "long", label: "Long", description: "A detailed digest" },
+];
+
+export function isSummaryLength(value: unknown): value is SummaryLength {
+  return SUMMARY_LENGTH_OPTIONS.some((option) => option.id === value);
 }
 
 export const PROVIDER_IDS: readonly ProviderId[] = [
@@ -206,6 +221,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sourceLanguage: "auto",
   targetLanguage: "en",
   defaultTargetLanguage: "en",
+  summaryLength: "medium",
+  summaryInstruction: "",
   providers: {
     openai: {
       apiKey: "",

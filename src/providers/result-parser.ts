@@ -38,9 +38,26 @@ export function parseFinalResult(raw: string): GeneratedResult {
   ) {
     throw new Error("The model returned an invalid result.");
   }
+  let result = parsed.result;
+  let swapText = parsed.swapText;
+  if (result.trim().startsWith("{") && /"result"\s*:/u.test(result)) {
+    try {
+      const nested = JSON.parse(result) as Record<string, unknown>;
+      if (typeof nested.result === "string") {
+        result = nested.result;
+        if (typeof nested.swapText === "string") {
+          swapText = nested.swapText;
+        } else {
+          swapText = result;
+        }
+      }
+    } catch {
+      // Ignore nesting parse failure and return original text
+    }
+  }
   return {
-    result: parsed.result,
-    swapText: parsed.swapText,
+    result,
+    swapText,
   };
 }
 
@@ -71,6 +88,16 @@ export function extractPartialResult(raw: string): string {
         case "\\":
           value += "\\";
           break;
+        case "u": {
+          const hex = raw.slice(index + 1, index + 5);
+          if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+            value += String.fromCharCode(parseInt(hex, 16));
+            index += 4;
+          } else {
+            value += "u";
+          }
+          break;
+        }
         default:
           value += character;
       }
@@ -84,6 +111,12 @@ export function extractPartialResult(raw: string): string {
     }
     if (character === '"') break;
     value += character;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.startsWith("{") && /"result"\s*:\s*"/.test(trimmed)) {
+    const nested = extractPartialResult(trimmed);
+    if (nested) return nested;
   }
 
   return value;
