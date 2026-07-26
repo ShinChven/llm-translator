@@ -140,6 +140,10 @@ textarea:disabled {
   white-space: nowrap;
 }
 
+.about-section .supporting-text a {
+  color: var(--md-sys-color-primary);
+}
+
 .repository-link {
   border-radius: 6px;
   color: inherit;

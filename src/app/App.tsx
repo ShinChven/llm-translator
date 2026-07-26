@@ -8,15 +8,18 @@ import {
   useState,
 } from "react";
 import {
+  AUTHOR,
   BUILT_IN_ACTIONS,
   DEFAULT_MODELS,
   LANGUAGES,
+  LICENSE,
   PROVIDER_DEFINITIONS,
   PROVIDER_IDS,
   REPOSITORY_URL,
   SPEECH_PROVIDER_DEFINITIONS,
   SPEECH_PROVIDER_IDS,
   STORAGE_KEYS,
+  extensionVersion,
   languageName,
   providerLabel,
   randomSpeechTestPhrase,
@@ -1269,6 +1272,24 @@ function SettingsView({
             Add action
           </button>
         </div>
+      </section>
+
+      <section className="settings-section about-section" aria-labelledby="about-heading">
+        <h2 id="about-heading">About</h2>
+        <p className="supporting-text">LLM Translator {extensionVersion()}</p>
+        <p className="supporting-text">
+          By {AUTHOR.name} ·{" "}
+          <a href={`mailto:${AUTHOR.email}`}>{AUTHOR.email}</a>
+        </p>
+        <p className="supporting-text">
+          <a href={LICENSE.url} rel="noreferrer" target="_blank">
+            {LICENSE.name}
+          </a>{" "}
+          ·{" "}
+          <a href={REPOSITORY_URL} rel="noreferrer" target="_blank">
+            View on GitHub
+          </a>
+        </p>
       </section>
 
       <div className="settings-save-bar">

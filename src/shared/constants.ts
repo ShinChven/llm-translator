@@ -166,6 +166,24 @@ export function randomSpeechTestPhrase(): string {
 
 export const REPOSITORY_URL = "https://github.com/ShinChven/llm-translator";
 
+export const AUTHOR = {
+  name: "ShinChven",
+  email: "shinchven@gmail.com",
+} as const;
+
+export const LICENSE = {
+  name: "MIT License",
+  url: `${REPOSITORY_URL}/blob/main/LICENSE`,
+} as const;
+
+/**
+ * The installed version. Release tooling keeps the manifest in step with
+ * package.json and the release tag, so this is what the user actually has.
+ */
+export function extensionVersion(): string {
+  return chrome.runtime.getManifest().version;
+}
+
 export const STORAGE_KEYS = {
   settings: "appSettings",
   pendingTask: "pendingTask",

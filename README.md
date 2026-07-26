@@ -3,7 +3,10 @@
 A Chrome Manifest V3 extension for translating and transforming selected text in
 the browser side panel.
 
-The product specification lives in [`docs/`](./docs/README.md). The
+The product specification lives in [`docs/`](./docs/README.md).
+
+Inspired by
+[nextai-translator](https://github.com/nextai-translator/nextai-translator). The
 `nextai-translator/` directory is a reference project only; the extension in this
 repository is an independent implementation.
 
@@ -20,6 +23,10 @@ repository is an independent implementation.
 - Provider model discovery with provider-specific defaults.
 - Strict structured output with visible `result` text and internal exchange text.
 - Streaming result updates.
+- Text-to-speech for the source and the result, with a selectable engine:
+  Chrome's built-in Web Speech API by default, or Gemini TTS or the OpenAI
+  Speech API using the key already configured for that provider. Cloud audio
+  streams as it is generated and is cached for instant replay.
 - Material Design 3 light and dark themes.
 
 ## Develop
@@ -92,7 +99,19 @@ while Chrome's `manifest.json` uses the numeric core version (`0.2.0`).
 ## Current implementation scope
 
 This build establishes the complete processing path and provider abstraction.
-The broader product requirements also specify history, OCR, text-to-speech,
-vocabulary, and rich Markdown/LaTeX rendering. Those modules are intentionally
-separate from the initial processing foundation and are tracked in the product
-documents.
+The broader product requirements also specify history, OCR, vocabulary, and
+rich Markdown/LaTeX rendering. Those modules are intentionally separate from the
+initial processing foundation and are tracked in the product documents.
+
+## Credits
+
+Inspired by
+[nextai-translator](https://github.com/nextai-translator/nextai-translator).
+
+## Author
+
+ShinChven &lt;shinchven@gmail.com&gt;
+
+## License
+
+[MIT](./LICENSE)
