@@ -10,7 +10,7 @@ Your API keys stay in your browser profile. Requests go straight from Chrome to 
 
 ## Features
 
-- **Side panel, not a popup.** Select text on any page, choose **Translate** from the context menu, and the panel opens beside the page instead of over it.
+- **Side panel, not a popup.** Select text on any page, choose **Translate** from the context menu — or press **Alt+T** (**Option+T** on macOS) — and the panel opens beside the page instead of over it. Rebind the shortcut at `chrome://extensions/shortcuts`.
 - **Six built-in actions.** Translate, Polish, Summarize, What, How, Why.
 - **Word mode.** Translating a single word returns a full dictionary entry — pronunciation, senses by part of speech, bilingual examples, and etymology — instead of a bare gloss.
 - **Refine without a chat log.** Follow-up instructions like *"make it shorter and more formal"* replace the result in place. One pane, no conversation to scroll.
@@ -93,7 +93,8 @@ Custom actions appear alongside these and support a role prompt, a command promp
 - API keys are stored in `chrome.storage.local`, scoped to your browser profile.
 - Source text is sent only to the provider you selected for that request.
 - Generated audio is cached in memory only and is discarded when the panel closes.
-- The extension requests `contextMenus`, `sidePanel` and `storage`, plus network access to the fixed provider domains. Access to a LiteLLM host is optional and requested only when you configure one.
+- The extension requests `activeTab`, `contextMenus`, `scripting`, `sidePanel` and `storage`, plus network access to the fixed provider domains. Access to a LiteLLM host is optional and requested only when you configure one.
+- `activeTab` and `scripting` are used for one thing: reading the current selection when you press the keyboard shortcut, which the commands API does not report on its own. `activeTab` grants access to a page only for the keystroke that invoked it, so the extension has no standing permission to read any site.
 
 ## Development
 

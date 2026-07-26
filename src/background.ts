@@ -17,6 +17,7 @@ import type {
 
 const PROCESS_SELECTION = "process-selection";
 const OPEN_TRANSLATOR = "open-translator";
+const TRANSLATE_SELECTION_COMMAND = "translate-selection";
 
 async function ensureProviderHostPermission(
   provider: ProviderId,
@@ -56,6 +57,91 @@ chrome.runtime.onStartup.addListener(() => {
   void createContextMenus();
 });
 
+/**
+ * Must run directly inside the user gesture callback. Waiting on anything
+ * first — storage, script injection — causes Chrome to reject the request.
+ */
+function openSidePanel(tab?: chrome.tabs.Tab): Promise<void> | undefined {
+  if (tab?.id !== undefined) return chrome.sidePanel.open({ tabId: tab.id });
+  if (tab?.windowId !== undefined) {
+    return chrome.sidePanel.open({ windowId: tab.windowId });
+  }
+  return undefined;
+}
+
+function deliverTask(task: PendingTask, openPanel?: Promise<void>): void {
+  void chrome.storage.session.set({ [STORAGE_KEYS.pendingTask]: task });
+
+  const taskMessage: ProcessTaskMessage = { type: "process-task", task };
+  // Deliver immediately when a side panel is already alive.
+  void chrome.runtime.sendMessage(taskMessage).catch(() => undefined);
+
+  if (openPanel) {
+    // A newly created panel may not have registered its listener during the
+    // immediate delivery, so deliver the same task again after it opens.
+    void openPanel
+      .then(() => chrome.runtime.sendMessage(taskMessage))
+      .catch(() => undefined);
+  }
+}
+
+/**
+ * The commands API reports no selection of its own, so read it from the page.
+ * `activeTab`, granted by the shortcut itself, authorizes the injection.
+ */
+async function readSelection(tabId: number): Promise<string> {
+  const readFrames = async (allFrames: boolean): Promise<string> => {
+    const injections = await chrome.scripting.executeScript({
+      target: { tabId, allFrames },
+      // Self-contained by necessity: this runs in the page, not here.
+      func: () => {
+        const focused = document.activeElement;
+        // A selection inside a form field is not part of the document
+        // selection, so `getSelection()` would come back empty for it.
+        if (
+          (focused instanceof HTMLInputElement ||
+            focused instanceof HTMLTextAreaElement) &&
+          focused.selectionStart !== focused.selectionEnd
+        ) {
+          return focused.value.slice(
+            focused.selectionStart ?? 0,
+            focused.selectionEnd ?? 0,
+          );
+        }
+        return window.getSelection()?.toString() ?? "";
+      },
+    });
+    for (const injection of injections) {
+      if (typeof injection.result === "string" && injection.result.trim()) {
+        return injection.result;
+      }
+    }
+    return "";
+  };
+
+  try {
+    // `activeTab` may not cover cross-origin subframes; fall back to the main
+    // frame rather than losing the selection when the wider target is refused.
+    return await readFrames(true).catch(() => readFrames(false));
+  } catch (error) {
+    // Restricted pages — chrome://, the Web Store — refuse injection. Log it:
+    // a silent empty selection is indistinguishable from selecting nothing.
+    console.warn("LLM Translator: could not read the page selection.", error);
+    return "";
+  }
+}
+
+async function activeTabForCommand(
+  tab?: chrome.tabs.Tab,
+): Promise<chrome.tabs.Tab | undefined> {
+  if (tab) return tab;
+  const [active] = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
+  });
+  return active;
+}
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== PROCESS_SELECTION && info.menuItemId !== OPEN_TRANSLATOR) {
     return;
@@ -71,28 +157,35 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     pageTitle: tab?.title,
   };
 
-  // `sidePanel.open()` must run directly inside the user gesture callback.
-  // Waiting for storage first causes Chrome to reject the request.
-  void chrome.storage.session.set({ [STORAGE_KEYS.pendingTask]: task });
+  const openPanel = openSidePanel(tab);
+  deliverTask(task, openPanel);
+});
 
-  const taskMessage: ProcessTaskMessage = { type: "process-task", task };
-  // Deliver immediately when a side panel is already alive.
-  void chrome.runtime.sendMessage(taskMessage).catch(() => undefined);
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command !== TRANSLATE_SELECTION_COMMAND) return;
 
-  let openPanel: Promise<void> | undefined;
-  if (tab?.id !== undefined) {
-    openPanel = chrome.sidePanel.open({ tabId: tab.id });
-  } else if (tab?.windowId !== undefined) {
-    openPanel = chrome.sidePanel.open({ windowId: tab.windowId });
-  }
+  // Read the selection before handing focus to the panel, and start both in
+  // this same tick so `sidePanel.open()` still counts as the gesture.
+  const selection = activeTabForCommand(tab).then((target) =>
+    target?.id === undefined ? "" : readSelection(target.id),
+  );
+  const openPanel = openSidePanel(tab);
 
-  if (openPanel) {
-    // A newly created panel may not have registered its listener during the
-    // immediate delivery, so deliver the same task again after it opens.
-    void openPanel
-      .then(() => chrome.runtime.sendMessage(taskMessage))
-      .catch(() => undefined);
-  }
+  void selection.then((source) => {
+    deliverTask(
+      {
+        id: crypto.randomUUID(),
+        source,
+        createdAt: Date.now(),
+        // Nothing selected: open the panel and let the user type or paste.
+        autoRun: Boolean(source.trim()),
+        actionId: "translate",
+        pageUrl: tab?.url,
+        pageTitle: tab?.title,
+      },
+      openPanel,
+    );
+  });
 });
 
 chrome.runtime.onMessage.addListener(
