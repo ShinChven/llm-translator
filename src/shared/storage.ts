@@ -35,6 +35,9 @@ function mergeSettings(value?: Partial<AppSettings>): AppSettings {
     ...DEFAULT_SETTINGS,
     ...value,
     speech: {
+      autoPlayResult:
+        value?.speech?.autoPlayResult ??
+        DEFAULT_SETTINGS.speech.autoPlayResult,
       provider: isSpeechProviderId(value?.speech?.provider)
         ? value.speech.provider
         : DEFAULT_SETTINGS.speech.provider,

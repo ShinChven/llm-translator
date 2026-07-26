@@ -30,6 +30,7 @@ export interface Speaker {
   pending: boolean;
   error: string;
   ready: boolean;
+  play: (id: string, text: string, language?: string) => void;
   toggle: (id: string, text: string, language?: string) => void;
   stop: () => void;
   dismissError: () => void;
@@ -66,12 +67,8 @@ export function useSpeaker(settings: AppSettings | null): Speaker {
   // A provider or voice change mid-playback would keep speaking the old voice.
   useEffect(() => stop, [speechProvider, voice, stop]);
 
-  const toggle = useCallback(
+  const play = useCallback(
     (id: string, text: string, language?: string) => {
-      if (activeId === id) {
-        stop();
-        return;
-      }
       stop();
       if (!text.trim() || !ready) return;
 
@@ -107,7 +104,18 @@ export function useSpeaker(settings: AppSettings | null): Speaker {
           setPending(false);
         });
     },
-    [activeId, apiKey, ready, speechProvider, stop, voice],
+    [apiKey, ready, speechProvider, stop, voice],
+  );
+
+  const toggle = useCallback(
+    (id: string, text: string, language?: string) => {
+      if (activeId === id) {
+        stop();
+        return;
+      }
+      play(id, text, language);
+    },
+    [activeId, play, stop],
   );
 
   return {
@@ -115,6 +123,7 @@ export function useSpeaker(settings: AppSettings | null): Speaker {
     pending,
     error,
     ready,
+    play,
     toggle,
     stop,
     dismissError: () => setError(""),

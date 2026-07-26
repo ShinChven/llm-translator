@@ -246,6 +246,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   customActions: [],
   speech: {
+    autoPlayResult: false,
     provider: "webspeech",
     providers: {
       webspeech: { voice: "" },

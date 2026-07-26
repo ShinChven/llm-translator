@@ -45,6 +45,7 @@ export interface SpeechProviderSettings {
 }
 
 export interface SpeechSettings {
+  autoPlayResult: boolean;
   provider: SpeechProviderId;
   providers: Record<SpeechProviderId, SpeechProviderSettings>;
 }

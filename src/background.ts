@@ -70,16 +70,22 @@ function openSidePanel(tab?: chrome.tabs.Tab): Promise<void> | undefined {
 }
 
 function deliverTask(task: PendingTask, openPanel?: Promise<void>): void {
-  void chrome.storage.session.set({ [STORAGE_KEYS.pendingTask]: task });
-
+  const stored = chrome.storage.session
+    .set({
+      [STORAGE_KEYS.pendingTask]: task,
+    })
+    .catch(() => undefined);
   const taskMessage: ProcessTaskMessage = { type: "process-task", task };
+
   // Deliver immediately when a side panel is already alive.
-  void chrome.runtime.sendMessage(taskMessage).catch(() => undefined);
+  void stored
+    .then(() => chrome.runtime.sendMessage(taskMessage))
+    .catch(() => undefined);
 
   if (openPanel) {
     // A newly created panel may not have registered its listener during the
     // immediate delivery, so deliver the same task again after it opens.
-    void openPanel
+    void Promise.all([stored, openPanel])
       .then(() => chrome.runtime.sendMessage(taskMessage))
       .catch(() => undefined);
   }
@@ -147,6 +153,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return;
   }
 
+  const openPanel = openSidePanel(tab);
+  if (info.menuItemId === OPEN_TRANSLATOR) return;
+
   const task: PendingTask = {
     id: crypto.randomUUID(),
     source: info.selectionText ?? "",
@@ -157,7 +166,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     pageTitle: tab?.title,
   };
 
-  const openPanel = openSidePanel(tab);
   deliverTask(task, openPanel);
 });
 

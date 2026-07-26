@@ -103,6 +103,7 @@ export function App() {
   const activeRequestId = useRef<string | undefined>(undefined);
   const handledTaskIds = useRef(new Set<string>());
   const speaker = useSpeaker(settings);
+  const playSpeech = speaker.play;
 
   const theme = settings?.theme;
   useEffect(() => {
@@ -115,15 +116,22 @@ export function App() {
 
   useEffect(() => {
     const acceptTask = (task: PendingTask) => {
-      if (!task.source || handledTaskIds.current.has(task.id)) return;
+      if (handledTaskIds.current.has(task.id)) return;
+      handledTaskIds.current.add(task.id);
+      activeRequestId.current = undefined;
+      generationPort.current?.disconnect();
+      generationPort.current = undefined;
+      setBusy(false);
       setSource(task.source);
       setActionId(task.actionId ?? "translate");
       setResult("");
       setSwapText("");
+      setRevision("");
       setError("");
       setView("process");
       setPendingTaskInitializationId(task.id);
-      if (task.autoRun) setAutoRunTaskId(task.id);
+      setAutoRunTaskId(task.autoRun ? task.id : undefined);
+      void chrome.storage.session.remove(STORAGE_KEYS.pendingTask);
     };
 
     void Promise.all([loadSettings(), loadPendingTask()]).then(
@@ -293,6 +301,15 @@ export function App() {
           setSwapText(event.swapText);
           setBusy(false);
           setRevision("");
+          if (settings.speech.autoPlayResult) {
+            playSpeech(
+              "result",
+              event.result,
+              actionId === "polish"
+                ? effectiveSourceLanguage
+                : effectiveTargetLanguage,
+            );
+          }
           port.disconnect();
         }
         if (event.type === "error") {
@@ -316,6 +333,7 @@ export function App() {
       result,
       selectedCustomAction,
       settings,
+      playSpeech,
       source,
     ],
   );
@@ -330,9 +348,7 @@ export function App() {
       return;
     }
 
-    handledTaskIds.current.add(autoRunTaskId);
     setAutoRunTaskId(undefined);
-    void chrome.storage.session.remove(STORAGE_KEYS.pendingTask);
     runGeneration();
   }, [
     autoRunTaskId,
@@ -1378,6 +1394,27 @@ function SpeechSettingsSection({
         Powers the speak buttons on the source and result panes. This engine is
         chosen separately from the text model provider.
       </p>
+
+      <label className="settings-toggle">
+        <span>
+          <strong>Automatically speak results</strong>
+          <small>Start text-to-speech when a result finishes generating.</small>
+        </span>
+        <input
+          checked={settings.speech.autoPlayResult}
+          onChange={(event) =>
+            onSettingsChange({
+              ...settings,
+              speech: {
+                ...settings.speech,
+                autoPlayResult: event.target.checked,
+              },
+            })
+          }
+          role="switch"
+          type="checkbox"
+        />
+      </label>
 
       <div className="provider-grid" role="radiogroup" aria-label="Speech engine">
         {SPEECH_PROVIDER_IDS.map((providerId) => {

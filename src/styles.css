@@ -972,6 +972,82 @@ textarea:disabled {
   font-size: 18px;
 }
 
+.settings-toggle {
+  display: flex;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 14px;
+  background: var(--md-sys-color-surface-container-low);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.settings-toggle > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settings-toggle strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.settings-toggle small {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.settings-toggle input {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  margin: 0;
+  border: 2px solid var(--md-sys-color-outline);
+  border-radius: 999px;
+  background: var(--md-sys-color-surface-container-highest);
+  flex: 0 0 auto;
+  appearance: none;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.settings-toggle input::before {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--md-sys-color-outline);
+  content: "";
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.settings-toggle input:checked {
+  border-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary);
+}
+
+.settings-toggle input:checked::before {
+  background: var(--md-sys-color-on-primary);
+  transform: translateX(18px);
+}
+
+.settings-toggle input:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary-container);
+  outline-offset: 2px;
+}
+
 .provider-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
