@@ -3,7 +3,18 @@ import type {
   BuiltInActionId,
   ProviderId,
   SpeechProviderId,
+  ThemePreference,
 } from "./types";
+
+export const THEME_OPTIONS: Array<{ id: ThemePreference; label: string }> = [
+  { id: "system", label: "System" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+];
+
+export function isThemePreference(value: unknown): value is ThemePreference {
+  return THEME_OPTIONS.some((option) => option.id === value);
+}
 
 export const PROVIDER_IDS: readonly ProviderId[] = [
   "openai",
@@ -191,6 +202,7 @@ export const STORAGE_KEYS = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   provider: "openai",
+  theme: "system",
   sourceLanguage: "auto",
   targetLanguage: "en",
   defaultTargetLanguage: "en",

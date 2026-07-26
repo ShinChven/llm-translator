@@ -17,7 +17,7 @@ Your API keys stay in your browser profile. Requests go straight from Chrome to 
 - **Language exchange.** Swap source and target in one click to translate a result back.
 - **Custom actions.** Define your own prompts with `${text}`, `${sourceLang}` and `${targetLang}` placeholders, and optionally pin each to a specific provider and model.
 - **Text-to-speech.** Read the source or the result aloud, using Chrome's built-in speech engine or a cloud voice.
-- **Streaming results** and **Material Design 3** light and dark themes.
+- **Streaming results** and **Material Design 3** light and dark themes, following Chrome or pinned to one in Settings.
 
 ## Screenshots
 

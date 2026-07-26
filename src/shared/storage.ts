@@ -6,6 +6,7 @@ import {
   STORAGE_KEYS,
   isProviderId,
   isSpeechProviderId,
+  isThemePreference,
 } from "./constants";
 import type { AppSettings, CustomAction, PendingTask } from "./types";
 
@@ -42,6 +43,9 @@ function mergeSettings(value?: Partial<AppSettings>): AppSettings {
     provider: isProviderId(value?.provider)
       ? value.provider
       : DEFAULT_SETTINGS.provider,
+    theme: isThemePreference(value?.theme)
+      ? value.theme
+      : DEFAULT_SETTINGS.theme,
     defaultTargetLanguage:
       value?.defaultTargetLanguage ??
       value?.targetLanguage ??
