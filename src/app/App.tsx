@@ -13,10 +13,23 @@ import {
   LANGUAGES,
   PROVIDER_DEFINITIONS,
   PROVIDER_IDS,
+  REPOSITORY_URL,
+  SPEECH_PROVIDER_DEFINITIONS,
+  SPEECH_PROVIDER_IDS,
   STORAGE_KEYS,
   languageName,
   providerLabel,
+  randomSpeechTestPhrase,
+  speechProviderLabel,
 } from "../shared/constants";
+import { isSpeechProviderReady } from "../providers/speech";
+import {
+  GEMINI_VOICES,
+  OPENAI_VOICES,
+  VOICE_GENDER_LABELS,
+  browserVoiceGender,
+  groupVoicesByGender,
+} from "../shared/voices";
 import {
   detectLanguage,
   fallbackTargetLanguage,
@@ -40,6 +53,8 @@ import type {
 } from "../shared/types";
 import { Icon } from "./Icon";
 import { ShareMenu } from "./ShareMenu";
+import { SpeakButton } from "./SpeakButton";
+import { useBrowserVoices, useSpeaker, type Speaker } from "./use-speech";
 import { WordResult } from "./WordResult";
 
 type View = "process" | "settings";
@@ -83,6 +98,7 @@ export function App() {
   const generationPort = useRef<chrome.runtime.Port | undefined>(undefined);
   const activeRequestId = useRef<string | undefined>(undefined);
   const handledTaskIds = useRef(new Set<string>());
+  const speaker = useSpeaker(settings);
 
   useEffect(() => {
     const acceptTask = (task: PendingTask) => {
@@ -372,7 +388,21 @@ export function App() {
             <Icon name="translate" />
           </div>
         )}
-        <h1>{view === "settings" ? "Settings" : "LLM Translator"}</h1>
+        <h1>
+          {view === "settings" ? (
+            "Settings"
+          ) : (
+            <a
+              className="repository-link"
+              href={REPOSITORY_URL}
+              rel="noreferrer"
+              target="_blank"
+              title="Open the project on GitHub"
+            >
+              LLM Translator
+            </a>
+          )}
+        </h1>
         {view === "process" && (
           <button
             className="icon-button"
@@ -419,10 +449,12 @@ export function App() {
           modelLocked={Boolean(selectedCustomAction?.model)}
           providerLocked={Boolean(selectedCustomAction?.provider)}
           source={source}
+          speaker={speaker}
         />
       ) : (
         <SettingsView
           settings={settings}
+          speaker={speaker}
           onSettingsChange={setSettings}
           onSave={async () => {
             await saveSettings(settings);
@@ -451,6 +483,7 @@ interface ProcessViewProps {
   providerLocked: boolean;
   settings: AppSettings;
   source: string;
+  speaker: Speaker;
   onActionChange: (action: ActionId) => void;
   onCopy: () => void;
   onDismissError: () => void;
@@ -480,6 +513,7 @@ function ProcessView({
   providerLocked,
   settings,
   source,
+  speaker,
   onActionChange,
   onCopy,
   onDismissError,
@@ -649,7 +683,16 @@ function ProcessView({
         <section className="text-section" aria-labelledby="source-heading">
           <div className="section-heading">
             <h2 id="source-heading">Source</h2>
-            <span>{source.length.toLocaleString()} characters</span>
+            <div className="heading-actions">
+              <span>{source.length.toLocaleString()} characters</span>
+              <SpeakButton
+                id="source"
+                label="the source text"
+                language={resolvedSourceLanguage}
+                speaker={speaker}
+                text={source}
+              />
+            </div>
           </div>
           <textarea
             className="source-field"
@@ -744,6 +787,13 @@ function ProcessView({
             </h2>
             {result && (
               <div className="result-actions">
+                <SpeakButton
+                  id="result"
+                  label="the result"
+                  language={displayedTargetLanguage}
+                  speaker={speaker}
+                  text={result}
+                />
                 <ShareMenu result={result} />
                 <button
                   className="icon-button small"
@@ -782,6 +832,18 @@ function ProcessView({
                 className="icon-button small"
                 aria-label="Dismiss error"
                 onClick={onDismissError}
+              >
+                <Icon name="close" size={20} />
+              </button>
+            </div>
+          )}
+          {speaker.error && (
+            <div className="error-banner" role="alert">
+              <span>{speaker.error}</span>
+              <button
+                className="icon-button small"
+                aria-label="Dismiss speech error"
+                onClick={speaker.dismissError}
               >
                 <Icon name="close" size={20} />
               </button>
@@ -828,12 +890,14 @@ function ProcessView({
 
 interface SettingsViewProps {
   settings: AppSettings;
+  speaker: Speaker;
   onSettingsChange: (settings: AppSettings) => void;
   onSave: () => void | Promise<void>;
 }
 
 function SettingsView({
   settings,
+  speaker,
   onSettingsChange,
   onSave,
 }: SettingsViewProps) {
@@ -1131,6 +1195,12 @@ function SettingsView({
         </p>
       </section>
 
+      <SpeechSettingsSection
+        settings={settings}
+        speaker={speaker}
+        onSettingsChange={onSettingsChange}
+      />
+
       <section className="settings-section" aria-labelledby="custom-actions-heading">
         <h2 id="custom-actions-heading">Custom actions</h2>
         <p className="section-description">
@@ -1210,6 +1280,150 @@ function SettingsView({
         </button>
       </div>
     </main>
+  );
+}
+
+interface SpeechSettingsSectionProps {
+  settings: AppSettings;
+  speaker: Speaker;
+  onSettingsChange: (settings: AppSettings) => void;
+}
+
+function SpeechSettingsSection({
+  settings,
+  speaker,
+  onSettingsChange,
+}: SpeechSettingsSectionProps) {
+  const browserVoices = useBrowserVoices();
+  const speechProvider = settings.speech.provider;
+  const definition = SPEECH_PROVIDER_DEFINITIONS[speechProvider];
+  const voice = settings.speech.providers[speechProvider].voice;
+
+  const selectVoice = (nextVoice: string) => {
+    onSettingsChange({
+      ...settings,
+      speech: {
+        ...settings.speech,
+        providers: {
+          ...settings.speech.providers,
+          [speechProvider]: { voice: nextVoice },
+        },
+      },
+    });
+  };
+
+  const testing = speaker.activeId === "speech-test";
+
+  return (
+    <section className="settings-section" aria-labelledby="speech-heading">
+      <h2 id="speech-heading">Text-to-speech</h2>
+      <p className="section-description">
+        Powers the speak buttons on the source and result panes. This engine is
+        chosen separately from the text model provider.
+      </p>
+
+      <div className="provider-grid" role="radiogroup" aria-label="Speech engine">
+        {SPEECH_PROVIDER_IDS.map((providerId) => {
+          const available = isSpeechProviderReady(providerId, settings);
+          const credential =
+            SPEECH_PROVIDER_DEFINITIONS[providerId].credentialProvider;
+          return (
+            <button
+              aria-checked={speechProvider === providerId}
+              className={speechProvider === providerId ? "selected" : ""}
+              disabled={!available}
+              key={providerId}
+              role="radio"
+              title={
+                available || !credential
+                  ? undefined
+                  : `Add your ${providerLabel(credential)} API key above to enable this engine.`
+              }
+              onClick={() => {
+                speaker.stop();
+                onSettingsChange({
+                  ...settings,
+                  speech: { ...settings.speech, provider: providerId },
+                });
+              }}
+            >
+              {speechProvider === providerId && <Icon name="check" size={18} />}
+              {speechProviderLabel(providerId)}
+            </button>
+          );
+        })}
+      </div>
+      <p className="supporting-text">{definition.description}</p>
+
+      <label className="outlined-field">
+        <span>Voice</span>
+        <select value={voice} onChange={(event) => selectVoice(event.target.value)}>
+          {speechProvider === "webspeech" ? (
+            <>
+              <option value="">Browser default for the text language</option>
+              {groupVoicesByGender(browserVoices, (item) =>
+                browserVoiceGender(item.name),
+              ).map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((item) => (
+                    <option key={item.voiceURI} value={item.voiceURI}>
+                      {item.name} · {item.lang}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </>
+          ) : (
+            groupVoicesByGender(
+              speechProvider === "gemini" ? GEMINI_VOICES : OPENAI_VOICES,
+              (item) => item.gender,
+            ).map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.id}
+                    {item.gender && ` · ${VOICE_GENDER_LABELS[item.gender]}`}
+                    {item.character && ` · ${item.character}`}
+                  </option>
+                ))}
+              </optgroup>
+            ))
+          )}
+        </select>
+      </label>
+      {speechProvider === "webspeech" && browserVoices.length === 0 && (
+        <p className="supporting-text">
+          Chrome has not reported any voices yet. Reopen the panel if the list
+          stays empty.
+        </p>
+      )}
+      <p className="supporting-text">
+        Voices are grouped by gender. No provider publishes this as data, so the
+        grouping is approximate — preview a voice to confirm.
+      </p>
+      {definition.model && (
+        <p className="supporting-text">Model: {definition.model}</p>
+      )}
+
+      <button
+        className="outlined-button"
+        disabled={!speaker.ready}
+        onClick={() =>
+          speaker.toggle("speech-test", randomSpeechTestPhrase(), "en-US")
+        }
+      >
+        {testing
+          ? speaker.pending
+            ? "Generating…"
+            : "Stop preview"
+          : "Test this voice"}
+      </button>
+      {speaker.error && (
+        <p className="field-error" role="alert">
+          {speaker.error}
+        </p>
+      )}
+    </section>
   );
 }
 

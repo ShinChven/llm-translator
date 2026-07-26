@@ -2,6 +2,7 @@ import type {
   AppSettings,
   BuiltInActionId,
   ProviderId,
+  SpeechProviderId,
 } from "./types";
 
 export const PROVIDER_IDS: readonly ProviderId[] = [
@@ -92,6 +93,79 @@ export function isProviderId(value: unknown): value is ProviderId {
   );
 }
 
+export const SPEECH_PROVIDER_IDS: readonly SpeechProviderId[] = [
+  "webspeech",
+  "gemini",
+  "openai",
+];
+
+export interface SpeechProviderDefinition {
+  id: SpeechProviderId;
+  label: string;
+  description: string;
+  /** Text provider whose API key and host permission this engine reuses. */
+  credentialProvider?: ProviderId;
+  model?: string;
+}
+
+export const SPEECH_PROVIDER_DEFINITIONS: Record<
+  SpeechProviderId,
+  SpeechProviderDefinition
+> = {
+  webspeech: {
+    id: "webspeech",
+    label: "Browser",
+    description:
+      "Chrome's built-in Web Speech API. Starts instantly, works offline, and needs no API key.",
+  },
+  gemini: {
+    id: "gemini",
+    label: "Gemini",
+    description:
+      "Gemini TTS with 30 voices and broad language coverage. Audio streams as it is generated. Reuses your Gemini API key.",
+    credentialProvider: "gemini",
+    model: "gemini-3.1-flash-tts-preview",
+  },
+  openai: {
+    id: "openai",
+    label: "OpenAI",
+    description:
+      "OpenAI Speech API with 13 voices. Audio streams as it is generated. Reuses your OpenAI API key.",
+    credentialProvider: "openai",
+    model: "gpt-4o-mini-tts",
+  },
+};
+
+/** Sampled at random so repeated voice previews stay distinguishable. */
+export const SPEECH_TEST_PHRASES = [
+  "The quick brown fox jumps over the lazy dog.",
+  "A voice is a fingerprint you can hear.",
+  "Pack my box with five dozen liquor jugs.",
+  "Every translation is a small act of interpretation.",
+  "She sells seashells by the seashore.",
+  "The early bird catches the worm, but the second mouse gets the cheese.",
+  "How much wood would a woodchuck chuck?",
+  "Language is the road map of a culture.",
+] as const;
+
+export function speechProviderLabel(provider: SpeechProviderId): string {
+  return SPEECH_PROVIDER_DEFINITIONS[provider].label;
+}
+
+export function isSpeechProviderId(value: unknown): value is SpeechProviderId {
+  return (
+    typeof value === "string" &&
+    (SPEECH_PROVIDER_IDS as readonly string[]).includes(value)
+  );
+}
+
+export function randomSpeechTestPhrase(): string {
+  const index = Math.floor(Math.random() * SPEECH_TEST_PHRASES.length);
+  return SPEECH_TEST_PHRASES[index];
+}
+
+export const REPOSITORY_URL = "https://github.com/ShinChven/llm-translator";
+
 export const STORAGE_KEYS = {
   settings: "appSettings",
   pendingTask: "pendingTask",
@@ -141,6 +215,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
   },
   customActions: [],
+  speech: {
+    provider: "webspeech",
+    providers: {
+      webspeech: { voice: "" },
+      gemini: { voice: "Kore" },
+      openai: { voice: "alloy" },
+    },
+  },
 };
 
 export const BUILT_IN_ACTIONS: Array<{
