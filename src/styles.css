@@ -843,6 +843,23 @@ textarea:disabled {
   line-height: 1.6;
 }
 
+.shortcut-hint {
+  margin: 10px 0 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.75;
+}
+
+.shortcut-hint kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 6px;
+  background: var(--md-sys-color-surface-container);
+  font: inherit;
+  font-size: 11px;
+}
+
 .result-placeholder {
   display: flex;
   min-height: 128px;

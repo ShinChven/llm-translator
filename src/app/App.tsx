@@ -59,6 +59,7 @@ import type {
 } from "../shared/types";
 import { Icon } from "./Icon";
 import { ShareMenu } from "./ShareMenu";
+import { ShortcutHint } from "./ShortcutHint";
 import { SpeakButton } from "./SpeakButton";
 import { useBrowserVoices, useSpeaker, type Speaker } from "./use-speech";
 import { WordResult } from "./WordResult";
@@ -966,6 +967,7 @@ function ProcessView({
               </div>
             )}
           </div>
+          <ShortcutHint />
           {error && (
             <div className="error-banner" role="alert">
               <span>{error}</span>
