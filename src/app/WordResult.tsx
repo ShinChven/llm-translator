@@ -1,3 +1,5 @@
+import { Markdown } from "./Markdown";
+
 interface WordSense {
   partOfSpeech?: string;
   definition: string;
@@ -167,7 +169,7 @@ function parseWordResult(result: string): ParsedWordResult | undefined {
 export function WordResult({ result }: { result: string }) {
   const entry = parseWordResult(result);
 
-  if (!entry) return <pre>{result}</pre>;
+  if (!entry) return <Markdown className="result-markdown" text={result} />;
 
   return (
     <article className="word-result">
