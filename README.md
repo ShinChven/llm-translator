@@ -96,6 +96,8 @@ Voices are grouped by gender to make them easier to choose between. No provider 
 
 Custom actions appear alongside these and support a role prompt, a command prompt, an output format (plain text, Markdown, LaTeX), and optional provider/model overrides.
 
+Results render as Markdown: headings, lists, block quotes, tables, links, and fenced code blocks. Copy, share, and read aloud still use the original text.
+
 ## Privacy
 
 - API keys are stored in `chrome.storage.local`, scoped to your browser profile.
@@ -128,7 +130,7 @@ Prerelease tags such as `v0.4.0-beta.1` create a GitHub prerelease. `package.jso
 
 ## Not yet implemented
 
-The product documents also specify history, OCR, vocabulary, and rich Markdown/LaTeX rendering. Those are tracked in [`docs/`](./docs/README.md) and are deliberately separate from the processing foundation this build establishes.
+The product documents also specify history, OCR, vocabulary, and LaTeX rendering. Those are tracked in [`docs/`](./docs/README.md) and are deliberately separate from the processing foundation this build establishes.
 
 ## Credits
 

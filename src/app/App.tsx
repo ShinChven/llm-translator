@@ -58,6 +58,7 @@ import type {
   ModelListResponse,
 } from "../shared/types";
 import { Icon } from "./Icon";
+import { Markdown } from "./Markdown";
 import { ShareMenu } from "./ShareMenu";
 import { ShortcutHint } from "./ShortcutHint";
 import { SpeakButton } from "./SpeakButton";
@@ -954,7 +955,11 @@ function ProcessView({
             aria-busy={busy}
           >
             {result ? (
-              wordMode ? <WordResult result={result} /> : <pre>{result}</pre>
+              wordMode ? (
+                <WordResult result={result} />
+              ) : (
+                <Markdown className="result-markdown" text={result} />
+              )
             ) : busy ? (
               <div className="result-placeholder">
                 <div className="linear-progress" />
