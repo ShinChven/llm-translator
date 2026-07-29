@@ -705,11 +705,23 @@ textarea:disabled {
 
 /*
  * Markdown rendering. The parser emits React elements only, so these rules
- * style real nodes; nothing is injected as HTML.
+ * style real nodes; nothing is injected as HTML. Surfaces are derived from the
+ * M3 palette with color-mix so both themes stay in step automatically.
  */
 .markdown {
+  --markdown-tint: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 7%,
+    var(--md-sys-color-surface-container-high)
+  );
+  --markdown-hairline: color-mix(
+    in srgb,
+    var(--md-sys-color-outline-variant) 70%,
+    transparent
+  );
   overflow-wrap: anywhere;
   word-break: break-word;
+  font-size: 15px;
 }
 
 .markdown > :first-child {
@@ -722,48 +734,70 @@ textarea:disabled {
 
 .markdown p {
   margin: 0 0 12px;
+  text-wrap: pretty;
 }
 
 .markdown-heading {
-  margin: 20px 0 8px;
-  font-weight: 600;
-  line-height: 1.3;
+  margin: 22px 0 8px;
+  font-weight: 620;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
 .markdown-heading.level-1 {
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--markdown-hairline);
   font-size: 20px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .markdown-heading.level-2 {
   font-size: 17px;
+  letter-spacing: -0.01em;
 }
 
-.markdown-heading.level-3,
+.markdown-heading.level-3 {
+  font-size: 15px;
+}
+
 .markdown-heading.level-4,
 .markdown-heading.level-5,
 .markdown-heading.level-6 {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: 0.01em;
 }
 
 .markdown ul,
 .markdown ol {
   margin: 0 0 12px;
-  padding-left: 22px;
+  padding-left: 24px;
 }
 
 .markdown li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.markdown ul > li::marker {
+  color: color-mix(in srgb, var(--md-sys-color-primary) 70%, transparent);
+  font-size: 1.05em;
+}
+
+.markdown ol > li::marker {
+  color: var(--md-sys-color-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.92em;
 }
 
 .markdown li > ul,
 .markdown li > ol {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
 }
 
 .markdown li > p {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 
 .markdown li > :last-child,
@@ -774,68 +808,165 @@ textarea:disabled {
 }
 
 .markdown blockquote {
-  margin: 0 0 12px;
-  padding: 2px 0 2px 14px;
-  border-left: 3px solid var(--md-sys-color-outline-variant);
+  position: relative;
+  margin: 0 0 14px;
+  padding: 10px 14px 10px 16px;
+  overflow: hidden;
+  border-radius: 4px 14px 14px 4px;
+  background: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 6%,
+    var(--md-sys-color-surface-container-high)
+  );
   color: var(--md-sys-color-on-surface-variant);
+}
+
+.markdown blockquote::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--md-sys-color-primary);
+}
+
+.markdown strong {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 650;
+}
+
+.markdown em {
+  font-style: italic;
+}
+
+.markdown del {
+  color: var(--md-sys-color-on-surface-variant);
+  text-decoration-thickness: 1px;
 }
 
 .markdown a {
   color: var(--md-sys-color-primary);
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 40%,
+    transparent
+  );
+  text-underline-offset: 3px;
+  transition:
+    text-decoration-color 120ms ease,
+    color 120ms ease;
+}
+
+.markdown a:hover {
+  text-decoration-color: currentcolor;
 }
 
 .markdown code {
-  padding: 1px 5px;
+  padding: 1.5px 5px;
   border-radius: 6px;
-  background: var(--md-sys-color-surface-container-high);
+  background: var(--markdown-tint);
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.92em;
+  font-size: 0.88em;
+}
+
+.markdown-code-block {
+  margin: 0 0 14px;
+  overflow: hidden;
+  border: 1px solid var(--markdown-hairline);
+  border-radius: 14px;
+  background: var(--markdown-tint);
+}
+
+.markdown-code-language {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--markdown-hairline);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .markdown pre.markdown-code {
-  margin: 0 0 12px;
+  margin: 0;
   padding: 12px 14px;
   overflow-x: auto;
-  border-radius: 12px;
-  background: var(--md-sys-color-surface-container-high);
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.55;
+  tab-size: 2;
 }
 
 .markdown pre.markdown-code code {
   padding: 0;
   border-radius: 0;
   background: none;
+  font-size: inherit;
   white-space: pre;
 }
 
 .markdown hr {
-  margin: 16px 0;
+  height: 1px;
+  margin: 20px 0;
   border: 0;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--md-sys-color-outline-variant) 18%,
+    var(--md-sys-color-outline-variant) 82%,
+    transparent
+  );
 }
 
 .markdown-table-scroll {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   overflow-x: auto;
+  border: 1px solid var(--markdown-hairline);
+  border-radius: 14px;
 }
 
 .markdown table {
+  width: 100%;
   border-collapse: collapse;
-  font-size: 0.95em;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .markdown th,
 .markdown td {
-  padding: 6px 10px;
-  border: 1px solid var(--md-sys-color-outline-variant);
+  padding: 9px 12px;
   text-align: left;
+  vertical-align: top;
 }
 
 .markdown th {
-  background: var(--md-sys-color-surface-container-high);
-  font-weight: 600;
+  background: var(--markdown-tint);
+  color: var(--md-sys-color-on-surface);
+  font-weight: 620;
+  white-space: nowrap;
+}
+
+.markdown tbody tr + tr td {
+  border-top: 1px solid var(--markdown-hairline);
+}
+
+.markdown tbody tr:nth-child(even) td {
+  background: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface) 3%,
+    transparent
+  );
+}
+
+.markdown-table-scroll,
+.markdown pre.markdown-code {
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+}
+
+.markdown ::selection {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
 }
 
 .word-result {
@@ -1723,19 +1854,39 @@ textarea:focus-visible {
 .result-surface .result-markdown {
   min-height: 92px;
   padding: 14px;
-  line-height: 1.58;
+  line-height: 1.6;
+}
+
+.markdown {
+  font-size: 14px;
 }
 
 .markdown-heading {
-  margin: 16px 0 6px;
+  margin: 18px 0 6px;
 }
 
 .markdown-heading.level-1 {
+  padding-bottom: 6px;
   font-size: 18px;
 }
 
 .markdown-heading.level-2 {
   font-size: 16px;
+}
+
+.markdown-code-block,
+.markdown-table-scroll {
+  border-radius: 12px;
+}
+
+.markdown pre.markdown-code {
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+
+.markdown th,
+.markdown td {
+  padding: 7px 10px;
 }
 
 .word-hero {

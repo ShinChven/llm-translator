@@ -39,9 +39,14 @@ function renderBlock(block: BlockNode): ReactNode {
     }
     case "code":
       return (
-        <pre className="markdown-code" data-language={block.language || undefined}>
-          <code>{block.value}</code>
-        </pre>
+        <div className="markdown-code-block">
+          {block.language && (
+            <div className="markdown-code-language">{block.language}</div>
+          )}
+          <pre className="markdown-code">
+            <code>{block.value}</code>
+          </pre>
+        </div>
       );
     case "blockquote":
       return <blockquote>{renderBlocks(block.children)}</blockquote>;
