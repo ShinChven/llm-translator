@@ -29,6 +29,16 @@ const SUMMARY_LENGTH_INSTRUCTIONS = {
 const SUMMARY_FORMAT_INSTRUCTION =
   "Return the summary as readable prose or bullet points inside result. Never encode the summary as JSON, XML, YAML, or a key-value object.";
 
+/**
+ * A detected source language is a guess, so it is offered as a hint the model
+ * may overrule. An explicitly chosen one is stated as fact.
+ */
+function sourceLanguageLine(request: GenerationRequest): string {
+  return request.sourceLanguageAutoDetected
+    ? `Source language: not declared. Detect it from the source itself; the automatic guess is ${languageName(request.sourceLanguage)} and may be wrong.`
+    : `Source language: ${languageName(request.sourceLanguage)}.`;
+}
+
 export function buildPrompts(request: GenerationRequest): {
   system: string;
   user: string;
@@ -123,7 +133,7 @@ export function buildPrompts(request: GenerationRequest): {
       system,
       user: [
         "Perform a dictionary lookup for the source word, not an ordinary sentence translation.",
-        `Source language: ${languageName(request.sourceLanguage)}.`,
+        sourceLanguageLine(request),
         `Explanation and meaning language: ${languageName(request.targetLanguage)}.`,
         "Cover the useful common senses of the word rather than returning only one translation.",
         "Set swapText to exactly one most common target-language translation of the source word. It must contain only that translated word or short lexical equivalent, with no pronunciation, labels, punctuation, alternatives, examples, or explanation.",
@@ -160,18 +170,20 @@ export function buildPrompts(request: GenerationRequest): {
   const languageInstructions =
     request.actionId === "refine"
       ? [
-          `Source language: ${languageName(request.sourceLanguage)}.`,
-          `Output language: ${languageName(request.sourceLanguage)}.`,
+          sourceLanguageLine(request),
+          request.sourceLanguageAutoDetected
+            ? "Output language: the language the source is actually written in, including its script and regional variety."
+            : `Output language: ${languageName(request.sourceLanguage)}, the same language as the source.`,
           "The output must remain in the source language. Do not translate the source into any other language, and ignore any target language.",
         ]
       : targetLanguageAction
         ? [
-            `Source language: ${languageName(request.sourceLanguage)}.`,
+            sourceLanguageLine(request),
             `Output language: ${languageName(request.targetLanguage)}.`,
             "The entire result must be written in the target language.",
           ]
         : [
-            `Source language: ${languageName(request.sourceLanguage)}.`,
+            sourceLanguageLine(request),
             `Target language: ${languageName(request.targetLanguage)}.`,
           ];
 

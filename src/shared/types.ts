@@ -84,6 +84,11 @@ export interface GenerationRequest {
   customCommandPrompt?: string;
   customOutputFormat?: ActionOutputFormat;
   sourceLanguage: string;
+  /**
+   * True when sourceLanguage came from the local heuristic rather than an
+   * explicit choice, so the prompt can let the model decide for itself.
+   */
+  sourceLanguageAutoDetected?: boolean;
   targetLanguage: string;
   summaryLength?: SummaryLength;
   summaryInstruction?: string;

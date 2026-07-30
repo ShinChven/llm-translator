@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite build --watch",
-    "test": "node --test src/providers/result-parser.test.ts src/app/markdown-parser.test.ts",
+    "test": "node --test src/providers/result-parser.test.ts src/app/markdown-parser.test.ts src/shared/language-detection.test.ts",
     "typecheck": "tsc --noEmit",
     "verify:release-tag": "node scripts/verify-release-tag.mjs"
   },

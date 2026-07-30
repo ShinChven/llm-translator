@@ -227,12 +227,15 @@ export function App() {
       ? detectedSourceLanguage
       : settings?.sourceLanguage;
 
+  // Refine rewrites in place, so its target language is always the source one.
   const effectiveTargetLanguage =
-    actionId === "translate" &&
-    effectiveSourceLanguage &&
-    settings?.targetLanguage === effectiveSourceLanguage
-      ? fallbackTargetLanguage(effectiveSourceLanguage)
-      : settings?.targetLanguage;
+    actionId === "refine"
+      ? effectiveSourceLanguage
+      : actionId === "translate" &&
+          effectiveSourceLanguage &&
+          settings?.targetLanguage === effectiveSourceLanguage
+        ? fallbackTargetLanguage(effectiveSourceLanguage)
+        : settings?.targetLanguage;
 
   const wordMode = Boolean(
     actionId === "translate" &&
@@ -297,6 +300,7 @@ export function App() {
         customCommandPrompt: selectedCustomAction?.commandPrompt,
         customOutputFormat: selectedCustomAction?.outputFormat,
         sourceLanguage: effectiveSourceLanguage ?? settings.sourceLanguage,
+        sourceLanguageAutoDetected: settings.sourceLanguage === "auto",
         targetLanguage: effectiveTargetLanguage ?? settings.targetLanguage,
         summaryLength:
           actionId === "summarize" ? settings.summaryLength : undefined,
