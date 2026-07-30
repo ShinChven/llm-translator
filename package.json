@@ -1,7 +1,7 @@
 {
   "name": "llm-translator",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Translate, rewrite, and refine selected text in the Chrome side panel.",
   "author": "ShinChven <shinchven@gmail.com>",
   "license": "MIT",
@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite build --watch",
-    "test": "node --test src/providers/result-parser.test.ts src/app/markdown-parser.test.ts",
+    "test": "node --test src/providers/result-parser.test.ts src/app/markdown-parser.test.ts src/shared/language-detection.test.ts",
     "typecheck": "tsc --noEmit",
     "verify:release-tag": "node scripts/verify-release-tag.mjs"
   },
