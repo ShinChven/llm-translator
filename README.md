@@ -121,12 +121,12 @@ The product specification lives in [`docs/`](./docs/README.md) — start with [f
 Pushing a `vMAJOR.MINOR.PATCH` tag triggers a GitHub Actions release. The workflow verifies that the tag matches `package.json`, `package-lock.json` and `public/manifest.json`, builds the extension, packages `dist/` as `llm-translator-VERSION-chrome.zip`, generates `SHA256SUMS.txt`, and publishes a GitHub Release with both assets.
 
 ```bash
-npm run verify:release-tag -- v0.4.0   # check the versions agree first
-git tag v0.4.0
-git push origin v0.4.0
+npm run verify:release-tag -- v0.5.0   # check the versions agree first
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
-Prerelease tags such as `v0.5.0-beta.1` create a GitHub prerelease. `package.json` and `package-lock.json` carry the full prerelease version, while Chrome's `manifest.json` uses the numeric core version (`0.5.0`).
+Prerelease tags such as `v0.6.0-beta.1` create a GitHub prerelease. `package.json` and `package-lock.json` carry the full prerelease version, while Chrome's `manifest.json` uses the numeric core version (`0.6.0`).
 
 ## Not yet implemented
 
