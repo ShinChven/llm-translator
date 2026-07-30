@@ -7,10 +7,10 @@ Your API keys stay in your browser profile. Requests go straight from Chrome to 
 ## Features
 
 - **Side panel, not a popup.** Select text on any page, choose **Translate** from the context menu — or press **Alt+T** (**Option+T** on macOS) — and the panel opens beside the page instead of over it. Rebind the shortcut at `chrome://extensions/shortcuts`.
-- **Six built-in actions.** Translate, Polish, Summarize, What, How, Why.
+- **Six built-in actions.** Translate, Refine, Summarize, What, How, Why.
 - **Summarize the current page.** Read the main webpage content in one click, choose a short, medium, or long digest, add an optional style instruction, and produce it in the selected target language.
 - **Word mode.** Translating a single word returns a full dictionary entry — pronunciation, senses by part of speech, bilingual examples, and etymology — instead of a bare gloss.
-- **Refine without a chat log.** Follow-up instructions like *"make it shorter and more formal"* replace the result in place. One pane, no conversation to scroll.
+- **Revise without a chat log.** Follow-up instructions like *"make it shorter and more formal"* replace the result in place. One pane, no conversation to scroll.
 - **Language exchange.** Swap source and target in one click to translate a result back.
 - **Custom actions.** Define your own prompts with `${text}`, `${sourceLang}` and `${targetLang}` placeholders, and optionally pin each to a specific provider and model.
 - **Text-to-speech.** Read the source or the result aloud, using Chrome's built-in speech engine or a cloud voice.
@@ -90,7 +90,7 @@ Voices are grouped by gender to make them easier to choose between. No provider 
 | Action | What it does |
 | --- | --- |
 | Translate | Translates into the target language. A single word switches to word mode. |
-| Polish | Rewrites for clarity, keeping the original language. |
+| Refine | Rewrites for clarity, keeping the original language. |
 | Summarize | Condenses the source. |
 | What / How / Why | Explains the source, answering in the target language. |
 

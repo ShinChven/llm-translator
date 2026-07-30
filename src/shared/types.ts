@@ -10,7 +10,7 @@ export type SpeechProviderId = "webspeech" | "gemini" | "openai";
 
 export type BuiltInActionId =
   | "translate"
-  | "polish"
+  | "refine"
   | "summarize"
   | "what"
   | "how"

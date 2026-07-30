@@ -5,7 +5,7 @@
 
 ## 1. Product Overview
 
-LLM Translator translates, polishes, summarizes, and explains text from web pages. Users submit selected text through the browser context menu, and all operations and results are presented in the Chrome side panel.
+LLM Translator translates, refines, summarizes, and explains text from web pages. Users submit selected text through the browser context menu, and all operations and results are presented in the Chrome side panel.
 
 The user interface follows Material Design 3. Component selection, layout, tokens, states, motion, and accessibility are defined in the [Material Design 3 UI Specification](./material-design-3-ui.md).
 
@@ -136,7 +136,7 @@ The extension provides the following built-in actions:
 
 1. **Translate**
    - Converts the source text into the target language.
-2. **Polish**
+2. **Refine**
    - Improves grammar, clarity, fluency, and tone.
 3. **Summarize**
    - Extracts key information and produces a concise summary.
@@ -168,11 +168,11 @@ When the source contains a single word, Translate switches to word mode. The res
 
 When the source and target languages are the same, the interface prompts the user to select a different target language.
 
-### 4.3 Polish
+### 4.3 Refine
 
-The Polish action improves the clarity, concision, coherence, and naturalness of the source while preserving its language.
+The Refine action improves the clarity, concision, coherence, and naturalness of the source while preserving its language. It never translates the source, and the target language selector is disabled while it is active.
 
-The result contains only the complete polished text.
+The result contains only the complete refined text.
 
 ### 4.4 Summarize
 
@@ -229,7 +229,7 @@ Built-in actions can be reordered and can override provider, model, and reasonin
 Built-in actions use fixed default emoji:
 
 - Translate: 🌐
-- Polish: ✨
+- Refine: ✨
 - Summarize: 📝
 - What: ❓
 - How: 🛠️
@@ -385,7 +385,7 @@ Language capabilities include:
 - When automatic source detection matches the default target language, the task target falls back to English.
 - Swapping source and target languages.
 - Right-to-left text direction where applicable.
-- Language parameters for Translate, Polish, Summarize, and custom actions.
+- Language parameters for Translate, Refine, Summarize, and custom actions.
 
 Users can select a language-detection method. If detection fails, the source remains set to automatic detection and the user can select it manually.
 
@@ -838,7 +838,7 @@ Users can delete individual data categories or clear all local data.
 
 ### 20.4 Actions
 
-- Translate, Polish, Summarize, What, How, and Why can run independently.
+- Translate, Refine, Summarize, What, How, and Why can run independently.
 - Users can create, edit, reorder, and delete custom actions.
 - Each action can select an output format, provider, and model.
 

@@ -279,7 +279,7 @@ export const BUILT_IN_ACTIONS: Array<{
   label: string;
 }> = [
   { id: "translate", icon: "🌐", label: "Translate" },
-  { id: "polish", icon: "✨", label: "Polish" },
+  { id: "refine", icon: "✨", label: "Refine" },
   { id: "summarize", icon: "📝", label: "Summarize" },
   { id: "what", icon: "❓", label: "What" },
   { id: "how", icon: "🛠️", label: "How" },
