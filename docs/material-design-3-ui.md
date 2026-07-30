@@ -47,7 +47,7 @@ The application does not use a persistent navigation rail. Primary navigation op
 ┌──────────────────────────────────────┐
 │ ☰  LLM Translator          model  ⚙ │  Small top app bar
 ├──────────────────────────────────────┤
-│ [Translate] [Polish] [Summarize]  › │  Filter chips
+│ [Translate] [Refine] [Summarize]  › │  Filter chips
 │ [Auto       ] ⇄ [English          ] │  Language controls
 ├──────────────────────────────────────┤
 │ Source                               │
@@ -99,7 +99,7 @@ Use a horizontally scrolling row of M3 filter chips.
 Visible actions:
 
 - Translate.
-- Polish.
+- Refine.
 - Summarize.
 - What.
 - How.
@@ -667,7 +667,7 @@ Required icons include:
 
 - Menu.
 - Translate.
-- Auto Awesome or Edit for Polish.
+- Auto Awesome or Edit for Refine.
 - Summarize.
 - Analytics.
 - Code.

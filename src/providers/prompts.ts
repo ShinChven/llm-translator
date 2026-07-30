@@ -5,8 +5,8 @@ import type { GenerationRequest } from "../shared/types";
 const ACTION_INSTRUCTIONS: Record<string, string> = {
   translate:
     "Translate the source accurately. Preserve meaning, tone, formatting, names, numbers, and code.",
-  polish:
-    "Polish the source for clarity, fluency, grammar, and natural expression without changing its meaning. Do not translate it.",
+  refine:
+    "Rewrite the source to improve clarity, fluency, grammar, and natural expression without changing its meaning. This is an editing task, never a translation task: keep the output in the same language as the source.",
   summarize:
     "Summarize the source concisely while retaining its important facts and conclusions.",
   what:
@@ -158,11 +158,11 @@ export function buildPrompts(request: GenerationRequest): {
     request.actionId,
   );
   const languageInstructions =
-    request.actionId === "polish"
+    request.actionId === "refine"
       ? [
           `Source language: ${languageName(request.sourceLanguage)}.`,
           `Output language: ${languageName(request.sourceLanguage)}.`,
-          "The output must remain in the source language. Do not translate the source into any other language.",
+          "The output must remain in the source language. Do not translate the source into any other language, and ignore any target language.",
         ]
       : targetLanguageAction
         ? [
@@ -171,8 +171,8 @@ export function buildPrompts(request: GenerationRequest): {
             "The entire result must be written in the target language.",
           ]
         : [
-          `Source language: ${languageName(request.sourceLanguage)}.`,
-          `Target language: ${languageName(request.targetLanguage)}.`,
+            `Source language: ${languageName(request.sourceLanguage)}.`,
+            `Target language: ${languageName(request.targetLanguage)}.`,
           ];
 
   return {

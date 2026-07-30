@@ -322,7 +322,7 @@ export function App() {
             playSpeech(
               "result",
               event.result,
-              actionId === "polish"
+              actionId === "refine"
                 ? effectiveSourceLanguage
                 : effectiveTargetLanguage,
             );
@@ -687,7 +687,7 @@ function ProcessView({
       ? detectedSourceLanguage
       : settings.sourceLanguage;
   const displayedTargetLanguage =
-    actionId === "polish"
+    actionId === "refine"
       ? resolvedSourceLanguage ?? settings.targetLanguage
       : settings.targetLanguage;
 
@@ -800,10 +800,17 @@ function ProcessView({
           >
             <Icon name="swap" />
           </button>
-          <label className="select-field">
+          <label
+            className="select-field"
+            title={
+              actionId === "refine"
+                ? "Refine rewrites the source in its own language"
+                : undefined
+            }
+          >
             <span>To</span>
             <select
-              disabled={actionId === "polish"}
+              disabled={actionId === "refine"}
               value={displayedTargetLanguage}
               onChange={(event) =>
                 onSettingsChange({
@@ -1011,7 +1018,7 @@ function ProcessView({
       </main>
 
       <footer className="revision-composer">
-        <label htmlFor="revision-input">Refine this result</label>
+        <label htmlFor="revision-input">Revise this result</label>
         <div className="composer-row">
           <textarea
             id="revision-input"
