@@ -50,10 +50,11 @@ export async function generateWithGemini(
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: prompts.system }] },
         contents: [{ role: "user", parts: [{ text: prompts.user }] }],
+        // No temperature: Gemini 3 models are tuned for their default of 1.0,
+        // and lowering it degrades long generations rather than steadying them.
         generationConfig: {
           responseMimeType: "application/json",
           responseJsonSchema: RESULT_SCHEMA,
-          temperature: 0,
         },
       }),
       signal,
