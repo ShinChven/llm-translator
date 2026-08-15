@@ -100,6 +100,28 @@ does not assume that every LiteLLM deployment supports a specific structured
 output parameter. A LiteLLM administrator can expose only models that reliably
 follow the common output contract.
 
+## 4.1 Sampling Temperature
+
+| Provider | Temperature sent |
+| --- | --- |
+| OpenAI | None; the Responses API rejects it on reasoning models |
+| Gemini | None; Gemini 3 models are tuned for their own default |
+| Claude | `0.3`, but only on the models that still accept the parameter |
+| Grok, OpenRouter, LiteLLM | `0.3` |
+
+The shared value is `0.3` rather than `0`. At zero, Refine can satisfy every
+instruction it is given by returning the source untouched, so a deterministic
+setting suppresses the edit the action exists to make. A translation is still
+faithful at this temperature.
+
+Whether the parameter is sent at all is each adapter's decision, because it is
+not universally accepted. Anthropic removed it from Opus 4.7 and later, Sonnet
+5, and the Fable and Mythos line, where sending it fails the request outright
+rather than being ignored. The adapter therefore carries an allowlist of the
+model families that accept it, and any model outside that list — including one
+released after the list was written — runs at the API default instead of
+risking a rejected request.
+
 ## 5. Model Discovery
 
 Model discovery is provider-owned:

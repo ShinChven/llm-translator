@@ -40,6 +40,17 @@ export const PROVIDER_IDS: readonly ProviderId[] = [
   "litellm",
 ];
 
+/**
+ * Low enough to keep translations faithful and the JSON envelope well formed,
+ * but not zero: at zero, Refine satisfies "keep the meaning and the language"
+ * most cheaply by handing the source back unchanged.
+ *
+ * Not every provider takes it. Gemini and OpenAI run at their own default, and
+ * Anthropic only accepts it on the models listed in the provider adapter, so
+ * each adapter decides whether to send this rather than assuming it is valid.
+ */
+export const GENERATION_TEMPERATURE = 0.3;
+
 export const DEFAULT_MODELS: Record<ProviderId, string> = {
   openai: "gpt-5.6-luna",
   gemini: "gemini-3.5-flash-lite",

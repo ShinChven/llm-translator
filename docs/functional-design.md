@@ -172,7 +172,7 @@ When the source and target languages are the same, the interface prompts the use
 
 The Refine action improves the clarity, concision, coherence, and naturalness of the source while preserving its language. It never translates the source, and the target language selector is disabled while it is active because Refine always uses the source language as its target language.
 
-While the source language is set to automatic detection, the request states that the source language is undeclared and passes the detected language only as a guess the model may overrule. The model keeps the output in the language the source is actually written in, so a mistaken detection cannot turn a refinement into a translation.
+The request carries a single instruction: fix the mistakes, improve the wording, and write the correction in the same language as the source. It names no source or target language at all, so a wrong automatic detection cannot turn a refinement into a translation, and no stack of language rules competes with the editing job.
 
 The result contains only the complete refined text.
 

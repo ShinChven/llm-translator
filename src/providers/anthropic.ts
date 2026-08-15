@@ -1,3 +1,5 @@
+import { GENERATION_TEMPERATURE } from "../shared/constants";
+import { supportsTemperature } from "./anthropic-models";
 import type {
   GeneratedResult,
   GenerationRequest,
@@ -71,7 +73,9 @@ export async function generateWithAnthropic(
     body: JSON.stringify({
       model: request.model,
       max_tokens: 8192,
-      temperature: 0,
+      ...(supportsTemperature(request.model)
+        ? { temperature: GENERATION_TEMPERATURE }
+        : {}),
       stream: true,
       system: prompts.system,
       messages: [{ role: "user", content: prompts.user }],

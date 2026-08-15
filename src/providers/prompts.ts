@@ -6,7 +6,7 @@ const ACTION_INSTRUCTIONS: Record<string, string> = {
   translate:
     "Translate the source accurately. Preserve meaning, tone, formatting, names, numbers, and code.",
   refine:
-    "Rewrite the source to improve clarity, fluency, grammar, and natural expression without changing its meaning. This is an editing task, never a translation task: keep the output in the same language as the source.",
+    "Fix the spelling, grammar, and punctuation mistakes in the source and improve its wording so it reads naturally. Write the corrected text in the same language as the source.",
   summarize:
     "Summarize the source concisely while retaining its important facts and conclusions.",
   what:
@@ -169,13 +169,9 @@ export function buildPrompts(request: GenerationRequest): {
   );
   const languageInstructions =
     request.actionId === "refine"
-      ? [
-          sourceLanguageLine(request),
-          request.sourceLanguageAutoDetected
-            ? "Output language: the language the source is actually written in, including its script and regional variety."
-            : `Output language: ${languageName(request.sourceLanguage)}, the same language as the source.`,
-          "The output must remain in the source language. Do not translate the source into any other language, and ignore any target language.",
-        ]
+      ? // The action instruction already says to keep the source language.
+        // Repeating it here only crowds out the editing job.
+        []
       : targetLanguageAction
         ? [
             sourceLanguageLine(request),

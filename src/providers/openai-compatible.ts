@@ -3,6 +3,7 @@ import type {
   GenerationRequest,
   ProviderSettings,
 } from "../shared/types";
+import { GENERATION_TEMPERATURE } from "../shared/constants";
 import { normalizeProviderBaseUrl } from "../shared/provider-url";
 import { buildPrompts } from "./prompts";
 import {
@@ -99,7 +100,7 @@ export async function generateOpenAICompatible(
         { role: "user", content: prompts.user },
       ],
       stream: true,
-      temperature: 0,
+      temperature: GENERATION_TEMPERATURE,
       max_tokens: 8192,
       ...(responseFormat ? { response_format: responseFormat } : {}),
       ...config.extraBody,
